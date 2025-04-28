@@ -49,6 +49,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 
 // API Routes
 const routes = app
+  .get('/health', (c) => c.text('OK'))
   .basePath("/api")
   .route("/accounts", accountsRouter)
   .route("/categories", categoriesRouter)

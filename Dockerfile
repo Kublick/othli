@@ -44,7 +44,7 @@ COPY --from=prerelease /usr/src/app/.env .
 
 # Add healthcheck to monitor app status
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD bun --eval "try { fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)) } catch (e) { process.exit(1) }"
+    CMD bun --eval "try { fetch('http://localhost:4000/health').then(r => r.ok ? process.exit(0) : process.exit(1)) } catch (e) { process.exit(1) }"
 
 # run the app
 USER bun
