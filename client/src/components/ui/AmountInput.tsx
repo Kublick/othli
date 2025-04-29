@@ -66,7 +66,6 @@ function AmountInput({
           (newIsPositive ? "" : "-") + String(numericInternalValue);
         onChange(signedValueString);
       } else if (internalValue === "") {
-        // Handle empty string case - maybe emit "0" or an empty string based on requirements
         onChange("0");
       }
     }
@@ -74,14 +73,12 @@ function AmountInput({
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = event.target.value;
-    // Allow only numbers and a single decimal point
     const sanitizedValue = rawValue
       .replace(/[^0-9.]/g, "")
       .replace(/(\..*)\./g, "$1");
     setInternalValue(sanitizedValue);
 
     if (onChange) {
-      // Construct the string representation with the correct sign
       const signedValueString = (isPositive ? "" : "-") + sanitizedValue;
       onChange(signedValueString);
     }
@@ -134,7 +131,8 @@ function AmountInput({
         className={cn(textColorClass, "tabular-nums")}
         {...props}
       />
-    </div>
+      {/* --- END UNCOMMENT --- */}
+    </div> // Or </span> if you prefer, but add width constraint where used
   );
 }
 

@@ -38,17 +38,25 @@ export function TransactionTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id.toString(),
+    // Optional: You might need to explicitly tell the table about column sizing
+    // enableColumnResizing: true, // If you want resizing handles
+    // columnResizeMode: 'onChange',
   });
 
   return (
     <div className="rounded-md border">
-      <Table>
+      {/* Apply table-layout: fixed here */}
+      <Table style={{ tableLayout: "fixed" }}>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  // Apply width based on column size definition
+                  <TableHead
+                    key={header.id}
+                    style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -69,7 +77,10 @@ export function TransactionTable({
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    style={{ width: `${cell.column.getSize()}px` }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

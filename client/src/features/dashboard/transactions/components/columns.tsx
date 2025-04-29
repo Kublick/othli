@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search } from "lucide-react";
+import { Search, Loader2, CircleCheck } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/popover";
 import { MyCombobox } from "@/components/ui/combobox";
 import { getCategories } from "@/features/dashboard/api/get-categories";
-import { getPayees } from "@/features/dashboard/api/get-payees"; // Import getPayees
+import { getPayees } from "@/features/dashboard/api/get-payees";
 import { useQueryClient } from "@tanstack/react-query";
 import { AmountInput } from "@/components/ui/AmountInput";
+import { useLoadingStore } from "@/store/loading-store";
 
 const transactionSchema = z.object({
   id: z.string(),
@@ -37,39 +38,49 @@ const transactionSchema = z.object({
 
 export type TransactionType = z.infer<typeof transactionSchema>;
 
+// Enhanced updateField function that returns the response
 const updateField = async ({
   id,
   field,
   value,
+  setLoading,
 }: {
   id: string;
   field: string;
   value: string | number | Date;
+  setLoading: (isLoading: boolean) => void;
 }) => {
-  const resp = await client.api.transactions.field.$patch({
-    json: {
-      id,
-      field,
-      value,
-    },
-  });
+  setLoading(true);
+  try {
+    ///ADD a delay of 2 secons to simulate a delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  if (resp.ok) {
-    toast.success("Transacción actuallizada");
+    const resp = await client.api.transactions.field.$patch({
+      json: {
+        id,
+        field,
+        value,
+      },
+    });
 
-    return true;
-  } else {
-    toast.error("Error al actualizar la transacción");
-
-    return false;
+    if (resp.ok) {
+      toast.success("Transacción actualizada");
+      return { success: true, data: await resp.json() };
+    } else {
+      toast.error("Error al actualizar la transacción");
+      return { success: false, error: await resp.text() };
+    }
+  } catch (error) {
+    toast.error("Error en la conexión");
+    return { success: false, error };
+  } finally {
+    setLoading(false);
   }
 };
 
 const formatDate = (date: Date): string => {
   let formatted = format(date, "EEE, MMM d", { locale: es });
-
   formatted = formatted.replace(/\./g, "");
-
   return formatted.replace(/(^|\s)([a-z])/g, (match) => match.toUpperCase());
 };
 
@@ -77,21 +88,32 @@ export const Columns: ColumnDef<TransactionType>[] = [
   {
     accessorKey: "date",
     header: "Fecha",
+    size: 60,
     cell: (info) => {
+      const rowId = String(info.row.original.id);
+      const isRowLoading = useLoadingStore((state) =>
+        state.isRowLoading(rowId)
+      );
+      const setRowLoading = useLoadingStore((state) => state.setRowLoading);
       const [value, setValue] = useState(info.row.original.date);
       const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-      const handleDateChange = (newDate?: Date) => {
+
+      const handleDateChange = async (newDate?: Date) => {
         if (newDate) {
-          setValue(newDate);
-          updateField({
-            id: String(info.row.original.id),
+          const result = await updateField({
+            id: rowId,
             field: "date",
             value: newDate,
+            setLoading: (isLoading) => setRowLoading(rowId, isLoading),
           });
+
+          if (result.success) {
+            setValue(newDate);
+          }
           setIsPopoverOpen(false);
-          setValue(newDate);
         }
       };
+
       return (
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
@@ -102,6 +124,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
                 !value && "text-muted-foreground"
               )}
               onClick={(e) => e.stopPropagation()}
+              disabled={isRowLoading}
             >
               {value ? (
                 formatDate(value as Date)
@@ -128,22 +151,32 @@ export const Columns: ColumnDef<TransactionType>[] = [
   {
     accessorKey: "categories.name",
     header: "Categoria",
+    size: 100,
     cell: (info) => {
+      const rowId = String(info.row.original.id);
+      const isRowLoading = useLoadingStore((state) =>
+        state.isRowLoading(rowId)
+      );
+      const setRowLoading = useLoadingStore((state) => state.setRowLoading);
       const { data: categories } = getCategories();
       const [value, setValue] = useState(info.getValue());
+
       const handleUpdate = async (newValue: string) => {
         if (newValue !== info.getValue()) {
           await updateField({
-            id: String(info.row.original.id),
+            id: rowId,
             field: "categoryId",
             value: newValue,
+            setLoading: (isLoading) => setRowLoading(rowId, isLoading),
           });
         }
       };
+
       const categoriesMap = categories?.map((category) => ({
         value: category.id.toString(),
         label: category.name,
       }));
+
       const handleChange = (selectedValue: string | number) => {
         const selectedCategory = categories?.find(
           (cat) => cat.id.toString() === selectedValue
@@ -154,14 +187,15 @@ export const Columns: ColumnDef<TransactionType>[] = [
           handleUpdate(String(categoryId));
         }
       };
+
       return (
         <div>
           <MyCombobox
             options={categoriesMap ?? []}
-            value={categoriesMap?.find((cat) => cat.label === value)?.value} // Set value based on current name
+            value={categoriesMap?.find((cat) => cat.label === value)?.value}
             onChange={handleChange}
             placeholder="Selecciona una categoria"
-            disabled={!categories}
+            disabled={!categories || isRowLoading}
           />
         </div>
       );
@@ -170,10 +204,17 @@ export const Columns: ColumnDef<TransactionType>[] = [
   {
     accessorKey: "payee.name",
     header: "Beneficiario",
+    size: 300,
     cell: (info) => {
+      const rowId = String(info.row.original.id);
+      const isRowLoading = useLoadingStore((state) =>
+        state.isRowLoading(rowId)
+      );
+      const setRowLoading = useLoadingStore((state) => state.setRowLoading);
       const queryClient = useQueryClient();
       const { data: payees } = getPayees();
       const [value, setValue] = useState(info.getValue());
+
       const handleUpdate = async (newValue: string | number) => {
         const originalPayee = payees?.find(
           (p) => p.id.toString() === info.row.original.payee.id.toString()
@@ -185,25 +226,30 @@ export const Columns: ColumnDef<TransactionType>[] = [
           (p) => p.id.toString() === newValue.toString()
         );
         const selectedValueOrName = selectedPayee ? selectedPayee.id : newValue;
+
         if (
           selectedValueOrName !== currentPayeeName &&
           selectedValueOrName !== info.row.original.payee.id
         ) {
-          const success = await updateField({
-            id: String(info.row.original.id),
+          const result = await updateField({
+            id: rowId,
             field: "payeeId",
             value: selectedValueOrName,
+            setLoading: (isLoading) => setRowLoading(rowId, isLoading),
           });
-          if (success) {
+
+          if (result.success) {
             // Invalidate payees query on successful update
             queryClient.invalidateQueries({ queryKey: ["payees"] });
           }
         }
       };
+
       const payeesMap = payees?.map((payee) => ({
         value: payee.id.toString(),
         label: payee.name,
       }));
+
       const handleChange = (selectedValue: string | number) => {
         const selectedPayee = payees?.find(
           (p) => p.id.toString() === selectedValue.toString()
@@ -215,6 +261,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
         }
         handleUpdate(selectedValue);
       };
+
       return (
         <div>
           <MyCombobox
@@ -225,7 +272,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
             }
             onChange={handleChange}
             placeholder="Selecciona o crea beneficiario"
-            disabled={!payees}
+            disabled={!payees || isRowLoading}
             disableClear={true}
             allowCreate
           />
@@ -236,66 +283,82 @@ export const Columns: ColumnDef<TransactionType>[] = [
   {
     accessorKey: "amount",
     header: "Monto",
-    maxSize: 125,
+    size: 90,
     cell: (info) => {
+      const rowId = String(info.row.original.id);
+      const isRowLoading = useLoadingStore((state) =>
+        state.isRowLoading(rowId)
+      );
+      const setRowLoading = useLoadingStore((state) => state.setRowLoading);
       const [value, setValue] = useState<string>(info.row.original.amount);
       const [originalValue, setOriginalValue] = useState<string>(
         info.row.original.amount
       );
-      // Handler for when the AmountInput value changes
+
       const handleChange = (newValue: string) => {
         setValue(newValue);
       };
-      // Handler for when the input loses focus (onBlur)
+
       const handleBlur = async () => {
-        // Only update if the value has actually changed
         if (value !== originalValue) {
-          const success = await updateField({
-            id: String(info.row.original.id),
+          const result = await updateField({
+            id: rowId,
             field: "amount",
             value: value,
+            setLoading: (isLoading) => setRowLoading(rowId, isLoading),
           });
-          if (success) {
+
+          if (result.success) {
             setOriginalValue(value);
-            setValue(value);
           } else {
             setValue(originalValue);
           }
         }
       };
-      // Handler for key down events
+
       const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Enter") {
-          handleBlur(); // Trigger the same update logic as onBlur
+          event.preventDefault();
+          (event.target as HTMLInputElement).blur();
+        } else if (event.key === "Escape") {
+          setValue(originalValue);
+          (event.target as HTMLInputElement).blur();
         }
       };
+
       return (
-        <AmountInput
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          placeholder="0.00"
-          value={value}
-        />
+        <div>
+          <AmountInput
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            placeholder="0.00"
+            value={value}
+            disabled={isRowLoading}
+          />
+        </div>
       );
     },
   },
   {
     accessorKey: "id",
+    size: 40,
     header: "Acciones",
-    cell: () => {
+    cell: (info) => {
+      const rowId = String(info.row.original.id);
+      const isRowLoading = useLoadingStore((state) =>
+        state.isRowLoading(rowId)
+      );
+
       return (
-        <div className="flex ">
-          <Button size={"icon"} variant={"ghost"}>
-            <Search />
-            {/* {isLoading ? (
-              <Loader2 className="animate-spin text-muted-foreground " />
+        <div className="flex">
+          <Button size={"icon"} variant={"ghost"} disabled={isRowLoading}>
+            {isRowLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
-              <CircleCheck className="text-primary" />
-            )} */}
+              <CircleCheck />
+            )}
           </Button>
-          {/* <RowDragHandleCell rowId={row.id} /> */}
-          {/* <CategoryUpdateSheet id={row.id} /> */}
         </div>
       );
     },
