@@ -11,6 +11,7 @@ interface AmountInputProps
   onChange?: (value: string) => void; // Emit string
   onSignChange?: (isPositive: boolean) => void;
   onBlur?: React.FocusEventHandler<HTMLInputElement>; // Add onBlur prop
+  startNegative?: boolean; // <-- Add new prop
 }
 
 function AmountInput({
@@ -19,37 +20,47 @@ function AmountInput({
   onChange,
   onSignChange,
   onBlur, // Accept the onBlur prop
+  startNegative = false, // <-- Default startNegative to false
   ...props
 }: AmountInputProps) {
+  // Initialize isPositive based on startNegative prop
   const [internalValue, setInternalValue] = useState<string>("");
-  const [isPositive, setIsPositive] = useState(true); // Default to positive, adjust based on input
+  const [isPositive, setIsPositive] = useState(!startNegative); // <-- Initialize based on prop
   const [isFocused, setIsFocused] = useState(false);
 
   // Effect to sync controlled value and sign
   React.useEffect(() => {
+    const initialSignPositive = !startNegative; // Determine default sign from prop
+
     if (controlledValue !== undefined) {
       const valueStr = String(controlledValue);
-      // Check if it's a valid number string (potentially signed)
       const numericValue = parseFloat(valueStr);
-      if (!isNaN(numericValue)) {
+
+      if (!isNaN(numericValue) && numericValue !== 0) { // Only override default if value is non-zero
         const positive = numericValue >= 0;
         setIsPositive(positive);
-        // Store absolute value, removing leading '+' if present
         setInternalValue(Math.abs(numericValue).toString());
         if (onSignChange) {
           onSignChange(positive);
         }
       } else {
-        // Handle cases where controlledValue might be an empty string or non-numeric
-        setInternalValue("");
-        setIsPositive(true); // Default sign for empty/invalid
+        // Handle 0, empty string, or non-numeric: use default sign
+        setInternalValue(numericValue === 0 ? "0" : ""); // Keep "0" if it was 0
+        setIsPositive(initialSignPositive);
+        if (onSignChange) {
+          onSignChange(initialSignPositive);
+        }
       }
     } else {
-      // Handle undefined controlledValue
+      // Handle undefined controlledValue: use default sign
       setInternalValue("");
-      setIsPositive(true);
+      setIsPositive(initialSignPositive);
+       if (onSignChange) {
+         onSignChange(initialSignPositive);
+       }
     }
-  }, [controlledValue, onSignChange]);
+    // Add startNegative to dependency array
+  }, [controlledValue, onSignChange, startNegative]);
 
   const handleSignToggle = () => {
     const newIsPositive = !isPositive;

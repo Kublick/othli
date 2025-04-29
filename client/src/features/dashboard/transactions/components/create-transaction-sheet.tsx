@@ -40,6 +40,7 @@ import { getCategories } from "../../api/get-categories";
 import { getPayees } from "../../api/get-payees";
 import { useCreateTransaction } from "../../api/use-create-transaction";
 import { MyCombobox } from "@/components/ui/combobox";
+import { AmountInput } from "@/components/ui/AmountInput";
 
 export const insertTransactionSchema = z.object({
   date: z.coerce.date(),
@@ -202,11 +203,11 @@ const CreateTransactionSheet = () => {
                   <FormItem>
                     <FormLabel>Monto</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="1.00"
+                      <AmountInput
                         {...field}
                         value={field.value ?? ""}
                         onChange={field.onChange}
+                        startNegative={true}
                       />
                     </FormControl>
                     <FormMessage />
