@@ -3,7 +3,12 @@ import { auth } from "../lib/auth";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { db } from "../db/drizzle";
-import { categories, payees, transactions } from "../db/schema";
+import {
+  categories,
+  payees,
+  selectTransactionSchema,
+  transactions,
+} from "../db/schema";
 import { nanoid } from "nanoid";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 
@@ -44,8 +49,6 @@ export const transactionsRouter = new Hono<{
 }>()
   .get("/", zValidator("query", DateRangeSchema), async (c) => {
     const { start_date, end_date } = c.req.valid("query");
-
-    console.log(start_date, end_date);
 
     const user = c.get("user");
     if (!user) return c.json({ message: "unauthorized" }, 401);
@@ -186,8 +189,6 @@ export const transactionsRouter = new Hono<{
       }
 
       if (field === "payeeId") {
-
-
         if (typeof value === "string") {
           const [existingPayee] = await db
             .select()
@@ -225,5 +226,35 @@ export const transactionsRouter = new Hono<{
       }
 
       return c.json({ message: "ok" }, 200);
+    }
+  )
+  .get(
+    "/:id",
+
+    async (c) => {
+      const user = c.get("user");
+
+
+      if (!user) return c.json({ message: "unauthorized" }, 401);
+      const { id } = c.req.param();
+      console.log(id);
+      try {
+        const [transaction] = await db
+          .select()
+          .from(transactions)
+
+          .where(
+            and(eq(transactions.id, id), eq(transactions.userId, user.id))
+          );
+
+        const validate = selectTransactionSchema.parse(transaction);
+
+
+
+        return c.json(validate, 200);
+      } catch (e) {
+        console.log(e);
+        return c.json({ message: "error" }, 500);
+      }
     }
   );

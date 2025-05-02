@@ -9,7 +9,7 @@ export const getTransactions = ({ start_date, end_date }: {
   end_date: string
 }) => {
   const query = useQuery({
-    queryKey: ["transactions"],
+    queryKey: ["transactions", { start_date, end_date }],
     queryFn: async () => {
       const respose = await client.api.transactions.$get({
         query: {

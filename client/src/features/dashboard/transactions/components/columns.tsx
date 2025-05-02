@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Loader2, CircleCheck } from "lucide-react";
+import { Search, Loader2, CircleCheck, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { getPayees } from "@/features/dashboard/api/get-payees";
 import { useQueryClient } from "@tanstack/react-query";
 import { AmountInput } from "@/components/ui/AmountInput";
 import { useLoadingStore } from "@/store/loading-store";
+import TransactionUpdateSheet from "./transaction-update-sheet";
 
 const transactionSchema = z.object({
   id: z.string(),
@@ -196,6 +197,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
             onChange={handleChange}
             placeholder="Selecciona una categoria"
             disabled={!categories || isRowLoading}
+            disableClear={true}
           />
         </div>
       );
@@ -345,6 +347,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
     size: 40,
     header: "Acciones",
     cell: (info) => {
+      const [open, setOpen] = useState(false);
       const rowId = String(info.row.original.id);
       const isRowLoading = useLoadingStore((state) =>
         state.isRowLoading(rowId)
@@ -356,9 +359,10 @@ export const Columns: ColumnDef<TransactionType>[] = [
             {isRowLoading ? (
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
             ) : (
-              <CircleCheck />
+              <CircleCheck className="text-primary" />
             )}
           </Button>
+          <TransactionUpdateSheet id={rowId} isOpen={open} />
         </div>
       );
     },

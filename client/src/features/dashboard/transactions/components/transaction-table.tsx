@@ -2,6 +2,7 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -17,6 +18,8 @@ import {
 import { useEffect, useState } from "react";
 import type { TransactionType } from "./columns";
 
+import { InputIcon } from "@/components/ui/input-icon";
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TransactionType[];
@@ -28,6 +31,7 @@ export function TransactionTable({
   data,
 }: DataTableProps<TransactionType, unknown>) {
   const [tableData, setTableData] = useState<TransactionType[]>([]);
+  const [filtering, setFiltering] = useState("");
 
   useEffect(() => {
     setTableData(data);
@@ -38,63 +42,83 @@ export function TransactionTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.id.toString(),
-    // Optional: You might need to explicitly tell the table about column sizing
-    // enableColumnResizing: true, // If you want resizing handles
-    // columnResizeMode: 'onChange',
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter: filtering,
+    },
+    onGlobalFilterChange: setFiltering,
+    // globalFilterFn: "includesString",
   });
 
   return (
-    <div className="rounded-md border">
-      {/* Apply table-layout: fixed here */}
-      <Table style={{ tableLayout: "fixed" }}>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  // Apply width based on column size definition
-                  <TableHead
-                    key={header.id}
-                    style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    style={{ width: `${cell.column.getSize()}px` }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+    <div>
+      <div className="flex justify-end pb-8 items-center">
+        <InputIcon
+          type="text w-64"
+          value={filtering ?? ""}
+          onChange={(e) => setFiltering(String(e.target.value))}
+          placeholder="Buscar"
+          fullWidth={false}
+        />
+      </div>
+
+      <div className="rounded-md border">
+        {/* Apply table-layout: fixed here */}
+        <Table style={{ tableLayout: "fixed" }}>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Uh ho no hay resultados aun...
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: `${cell.column.getSize()}px` }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Uh ho no hay resultados aun...
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

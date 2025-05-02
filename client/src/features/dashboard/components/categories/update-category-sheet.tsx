@@ -24,7 +24,6 @@ import { Separator } from "@radix-ui/react-separator";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-// import { useCreateCategory } from "../../api/use-create-category";
 import { ChevronRight } from "lucide-react";
 import { useCreateCategory } from "../../api/use-create-category";
 import { insertCategorySchema } from "./create-category-sheet";

@@ -8,6 +8,9 @@ import { TransactionTable } from "@/features/dashboard/transactions/components/t
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
+// Import date-fns functions
+import { startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query"; // Keep this import if used elsewhere, otherwise remove
 
 const INITIAL_UPLOAD = {
   data: [],
@@ -20,20 +23,13 @@ export const Route = createFileRoute("/dashboard/finances/transactions")({
 });
 
 function RouteComponent() {
+  // const queryClient = useQueryClient(); // Remove if not used elsewhere after changes
   const [importedResults, setImportedResults] = useState(INITIAL_UPLOAD);
   const [currentDate, setCurrentDate] = useState(new Date());
-  console.log(importedResults);
-  // Calculate first and last day of the current month
-  const firstDayOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    1
-  );
-  const lastDayOfMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0
-  );
+
+  // Use date-fns functions
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const lastDayOfMonth = endOfMonth(currentDate);
 
   const { data: transactions, isLoading: isLoadingTransactions } =
     getTransactions({
@@ -50,33 +46,16 @@ function RouteComponent() {
     formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   const goToPreviousMonth = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() - 1);
-      return newDate;
-    });
+    setCurrentDate((prevDate) => subMonths(prevDate, 1));
   };
 
   const goToNextMonth = () => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() + 1);
-      return newDate;
-    });
+    setCurrentDate((prevDate) => addMonths(prevDate, 1));
   };
-
-  useEffect(() => {
-    console.log("Selected date changed:", currentDate);
-  }, [currentDate]);
 
   const onUpload = (results: typeof INITIAL_UPLOAD) => {
-    console.log({ results });
     setImportedResults(results);
   };
-
-  // const onCancelImport = () => {
-  //   setImportedResults(INITIAL_UPLOAD);
-  // };
 
   if (isLoadingTransactions) {
     return (
@@ -85,7 +64,7 @@ function RouteComponent() {
       </div>
     );
   }
-  console.log({ transactions });
+
   if (!transactions)
     return (
       <div className="flex flex-col h-screen justify-center items-center">

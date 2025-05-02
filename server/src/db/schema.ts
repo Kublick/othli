@@ -173,6 +173,7 @@ export const transactions = pgTable("transactions", {
   date: timestamp("date").notNull(),
   createdAt: timestamp("created_at").default(new Date()).notNull(),
   updatedAt: timestamp("updated_at").default(new Date()).notNull(),
+
 });
 
 // export const transactionsRelations = relations(transactions, ({ one }) => ({
@@ -206,16 +207,19 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   updatedAt: true,
 });
 
+export const selectTransactionSchema = createInsertSchema(transactions)
+export type SelectTransacionType = z.infer<typeof selectTransactionSchema>;
+
 export const rules = pgTable("rules", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(), // Rule name
-  description: text("description"), // Optional description of the rule
-  priority: integer("priority").notNull().default(1), // Priority (1 = highest)
-  conditions: text("conditions").notNull(), // JSON to store conditions
-  actions: text("actions").notNull(), // JSON to store actions
-  stopProcessing: boolean("stop_processing").default(false).notNull(), // Stop processing further rules
-  deleteAfterUse: boolean("delete_after_use").default(false).notNull(), // Delete rule after use
-  runOnUpdates: boolean("run_on_updates").default(false).notNull(), // Run rule on transaction updates
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  priority: integer("priority").notNull().default(1),
+  conditions: text("conditions").notNull(),
+  actions: text("actions").notNull(),
+  stopProcessing: boolean("stop_processing").default(false).notNull(),
+  deleteAfterUse: boolean("delete_after_use").default(false).notNull(),
+  runOnUpdates: boolean("run_on_updates").default(false).notNull(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }), // Rule belongs to a user
