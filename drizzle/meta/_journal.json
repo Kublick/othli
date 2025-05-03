@@ -36,6 +36,13 @@
       "when": 1745552959476,
       "tag": "0004_nervous_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1746157640266,
+      "tag": "0005_opposite_black_bolt",
+      "breakpoints": true
     }
   ]
 }

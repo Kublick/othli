@@ -9,6 +9,7 @@ import {
   pgEnum,
   integer,
   numeric,
+  jsonb, // Import jsonb type
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -173,7 +174,6 @@ export const transactions = pgTable("transactions", {
   date: timestamp("date").notNull(),
   createdAt: timestamp("created_at").default(new Date()).notNull(),
   updatedAt: timestamp("updated_at").default(new Date()).notNull(),
-
 });
 
 // export const transactionsRelations = relations(transactions, ({ one }) => ({
@@ -201,7 +201,7 @@ export const transactions = pgTable("transactions", {
 // }));
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
-  id: true,
+
   userId: true,
   createdAt: true,
   updatedAt: true,
@@ -236,3 +236,21 @@ export const payees = pgTable("payees", {
   createdAt: timestamp("created_at").notNull().default(new Date()),
   updatedAt: timestamp("updated_at").notNull().default(new Date()),
 });
+
+export const transactionHistory = pgTable("transaction_history", {
+  id: serial("id").primaryKey(),
+  transactionId: text("transaction_id")
+    .notNull()
+    .references(() => transactions.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  action: text("action").notNull(), // 'created' or 'updated'
+  // Use jsonb to store varying details based on action
+  details: jsonb("details"), // Can store { field, oldValue, newValue, metadata } or { descriptor, metadata }
+  timestamp: timestamp("timestamp").notNull().default(new Date()), // Renamed from changedAt for clarity
+});
+
+
+export const selectTransactionHistorySchema = createInsertSchema(transactionHistory);
+export type SelectTransacionHistoryType = z.infer<typeof selectTransactionHistorySchema>;

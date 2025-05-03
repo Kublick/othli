@@ -8,9 +8,12 @@ import {
   payees,
   selectTransactionSchema,
   transactions,
+  transactionHistory,
+  selectTransactionHistorySchema,
 } from "../db/schema";
 import { nanoid } from "nanoid";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { inArray } from "drizzle-orm"; // Import inArray for batch fetching
 
 const DateRangeSchema = z.object({
   start_date: z
@@ -19,6 +22,33 @@ const DateRangeSchema = z.object({
   end_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in format YYYY-MM-DD"),
+});
+
+export const logEntrySchema = z.object({
+  id: z.number(),
+  transactionId: z.string(),
+  userId: z.string(),
+  action: z.string(),
+  details: z.union([
+    z.object({
+      field: z.literal('payeeId'),
+      source: z.string(),
+      newValue: z.string(),
+      oldValue: z.string(),
+      user_name: z.string(),
+      oldValueName: z.string(),
+      newValueName: z.string(),
+    }),
+    z.object({
+      source: z.string(),
+      metadata: z.object({
+        source: z.string(),
+      }),
+      user_name: z.string(),
+      descriptor: z.string(),
+    }),
+  ]),
+  timestamp: z.date()
 });
 
 export const insertTransactionSchema = z.object({
@@ -91,7 +121,7 @@ export const transactionsRouter = new Hono<{
     if (!user) return c.json({ message: "unauthorized" }, 401);
 
     const { date, categoryId, payeeId, accountId, amount, description } =
-      await c.req.json();
+      c.req.valid("json");
 
     let finalCategoryId;
     let finalPayeeId;
@@ -139,23 +169,42 @@ export const transactionsRouter = new Hono<{
     }
 
     try {
-      const transaction = await db.insert(transactions).values({
-        id: nanoid(),
-        description: description ?? "",
-        date: new Date(date),
-        categoryId:
-          typeof categoryId === "number" ? categoryId : finalCategoryId,
-        payeeId: typeof payeeId === "number" ? payeeId : finalPayeeId,
-        accountId,
-        amount,
+      const [transaction] = await db
+        .insert(transactions)
+        .values({
+          id: nanoid(),
+          description: description ?? "",
+          date: new Date(date),
+          categoryId:
+            typeof categoryId === "number" ? categoryId : finalCategoryId,
+          payeeId: typeof payeeId === "number" ? payeeId : finalPayeeId,
+          accountId,
+          amount: String(amount),
+          userId: user.id,
+        })
+        .returning();
+
+      const history = await db.insert(transactionHistory).values({
+        transactionId: transaction.id,
         userId: user.id,
+        action: "created",
+        details: {
+          descriptor: "Transaccion Manual",
+          source: "user",
+          user_name: user?.name ?? null,
+          metadata: {
+            source: "manual",
+          },
+        },
+        timestamp: new Date(),
       });
+
       return c.json(
         {
           message: "Transaction created",
           transaction,
         },
-        200
+        201
       );
     } catch (error) {
       console.log(error);
@@ -177,6 +226,26 @@ export const transactionsRouter = new Hono<{
 
       if (!user) return c.json({ message: "unauthorized" }, 401);
       const { id, field, value } = c.req.valid("json");
+
+      let oldValue;
+      try {
+        const [currentTransaction] = await db
+          .select()
+          .from(transactions)
+          .where(
+            and(eq(transactions.id, id), eq(transactions.userId, user.id))
+          );
+
+        if (!currentTransaction) {
+          return c.json({ message: "Transaction not found" }, 404);
+        }
+
+        oldValue = currentTransaction[field as keyof typeof currentTransaction];
+      } catch (e) {
+        console.error("Error fetching current transaction:", e);
+        return c.json({ message: "Error fetching transaction data" }, 500);
+      }
+
 
       let updateValue = value;
 
@@ -218,11 +287,38 @@ export const transactionsRouter = new Hono<{
           .update(transactions)
           .set({
             [field]: updateValue,
+            updatedAt: new Date(),
           })
-          .where(eq(transactions.id, id));
+          .where(
+            and(eq(transactions.id, id), eq(transactions.userId, user.id))
+          );
+
+        await db // Use db directly
+          .insert(transactionHistory)
+          .values({
+            transactionId: id,
+            userId: user.id,
+            action: "updated",
+            details: {
+              field: field,
+              oldValue: String(oldValue),
+              newValue: String(updateValue),
+              source: "user",
+              user_name: user?.name ?? null, // Use user from context directly
+              metadata:
+                field === "amount"
+                  ? {
+                    original_amount: String(oldValue),
+                    new_amount: String(updateValue),
+                  }
+                  : undefined,
+            },
+            timestamp: new Date(),
+          });
+
       } catch (e) {
-        console.log(e);
-        return c.json({ message: "error" }, 500);
+        console.error("Error updating transaction or recording history:", e);
+        return c.json({ message: "Error processing update" }, 500);
       }
 
       return c.json({ message: "ok" }, 200);
@@ -233,7 +329,6 @@ export const transactionsRouter = new Hono<{
 
     async (c) => {
       const user = c.get("user");
-
 
       if (!user) return c.json({ message: "unauthorized" }, 401);
       const { id } = c.req.param();
@@ -249,12 +344,116 @@ export const transactionsRouter = new Hono<{
 
         const validate = selectTransactionSchema.parse(transaction);
 
-
-
         return c.json(validate, 200);
       } catch (e) {
         console.log(e);
         return c.json({ message: "error" }, 500);
+      }
+    }
+  )
+  .get(
+    "/history/:id",
+    zValidator(
+      "param",
+      z.object({
+        id: z.string(),
+      })
+    ),
+    async (c) => {
+      const user = c.get("user");
+      if (!user) return c.json({ message: "unauthorized" }, 401);
+      const { id } = c.req.param();
+
+      try {
+        // 1. Fetch Raw History
+        const rawHistory = await db
+          .select()
+          .from(transactionHistory)
+          .where(
+            and(
+              eq(transactionHistory.transactionId, id),
+              eq(transactionHistory.userId, user.id) // Important: Ensure user owns the history records
+            )
+          )
+          .orderBy(desc(transactionHistory.timestamp));
+
+
+        const payeeIds = new Set<number>();
+        const categoryIds = new Set<number>();
+
+        rawHistory.forEach(entry => {
+          if (entry.details && typeof entry.details === 'object') {
+            const details = entry.details as any; // Type assertion for easier access
+            if (details.field === 'payeeId' || details.field === 'categoryId') {
+              const oldValueId = parseInt(details.oldValue, 10);
+              const newValueId = parseInt(details.newValue, 10);
+              const targetSet = details.field === 'payeeId' ? payeeIds : categoryIds;
+              if (!isNaN(oldValueId)) targetSet.add(oldValueId);
+              if (!isNaN(newValueId)) targetSet.add(newValueId);
+            }
+          }
+        });
+
+
+        const payeeMap: Record<number, string> = {};
+        const categoryMap: Record<number, string> = {};
+
+        if (payeeIds.size > 0) {
+          const payeesData = await db
+            .select({ id: payees.id, name: payees.name })
+            .from(payees)
+            .where(and(
+              inArray(payees.id, Array.from(payeeIds)),
+              eq(payees.userId, user.id) // Ensure user owns the payees
+            ));
+          payeesData.forEach(p => { payeeMap[p.id] = p.name; });
+        }
+
+        if (categoryIds.size > 0) {
+          const categoriesData = await db
+            .select({ id: categories.id, name: categories.name })
+            .from(categories)
+            .where(and(
+              inArray(categories.id, Array.from(categoryIds)),
+              eq(categories.userId, user.id) // Ensure user owns the categories
+            ));
+          categoriesData.forEach(cat => { categoryMap[cat.id] = cat.name; });
+        }
+
+        // 4. Augment History
+        const augmentedHistory = rawHistory.map(entry => {
+          if (entry.details && typeof entry.details === 'object') {
+            const details = entry.details as any;
+            let augmentedDetails = { ...details }; // Clone details
+
+            if (details.field === 'payeeId' || details.field === 'categoryId') {
+              const oldValueId = parseInt(details.oldValue, 10);
+              const newValueId = parseInt(details.newValue, 10);
+              const lookupMap = details.field === 'payeeId' ? payeeMap : categoryMap;
+
+              if (!isNaN(oldValueId)) {
+                augmentedDetails.oldValueName = lookupMap[oldValueId] ?? `(ID: ${oldValueId})`; // Add name or fallback
+              }
+              if (!isNaN(newValueId)) {
+                augmentedDetails.newValueName = lookupMap[newValueId] ?? `(ID: ${newValueId})`; // Add name or fallback
+              }
+            }
+            return { ...entry, details: augmentedDetails };
+          }
+          return entry;
+        });
+
+        console.log(JSON.stringify(augmentedHistory))
+
+        // 5. Validate and Return Augmented History
+        // Adjust selectTransactionHistorySchema if needed to allow optional name fields
+        // Or create a new schema for the augmented response
+        const response = z.array(logEntrySchema).parse(augmentedHistory); // Use existing schema for now
+
+        return c.json(response, 200);
+      } catch (e) {
+        console.error("Error fetching or processing transaction history:", e); // Log the actual error
+        return c.json({ message: "Ocurrio un error al obtener el historial" }, 500); // More specific error message
       }
     }
   );

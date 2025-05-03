@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, Loader2, CircleCheck, ChevronRight } from "lucide-react";
+import { Loader2, CircleCheck } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";

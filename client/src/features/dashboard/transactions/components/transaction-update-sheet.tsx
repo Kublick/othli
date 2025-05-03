@@ -40,6 +40,8 @@ import { es } from "date-fns/locale/es";
 import { MyCombobox } from "@/components/ui/combobox";
 import { AmountInput } from "@/components/ui/AmountInput";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
+import TransactionHistoryButton from "./transaction-history-button";
 
 interface Props {
   id: string;
@@ -249,6 +251,10 @@ const TransactionUpdateSheet = ({ id }: Props) => {
                   </FormItem>
                 )}
               />
+              <Separator />
+
+              <TransactionHistoryButton id={id} />
+
               <div className="flex justify-end mt-6 space-x-4">
                 <Button
                   type="button"
