@@ -22,14 +22,7 @@ export const accountsRouter = new Hono<{
         .from(accounts)
         .where(eq(accounts.userId, user.id));
 
-      // const totalBalance = data
-      //   .filter((account) => !account.excludeTransactions)
-      //   .reduce((sum, account) => sum + Number(account.balance), 0);
 
-      // const finalData = {
-      //   accounts: data,
-      //   totalBalance: totalBalance.toFixed(2),
-      // };
 
       return c.json(data, 200);
     } catch (error) {
@@ -63,4 +56,4 @@ export const accountsRouter = new Hono<{
     return c.json({
       message: "Account created",
     });
-  });
+  })
