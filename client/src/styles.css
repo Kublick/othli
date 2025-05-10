@@ -92,6 +92,11 @@ code {
   --tracking-normal: 0em;
   --warning: oklch(0.85 0.16 85);
   --warning-foreground: oklch(0.2 0.04 60);
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
 }
 
 .dark {
@@ -221,6 +226,11 @@ code {
   --color-shadow-color: var(--shadow-color);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
 }
 
 @layer base {

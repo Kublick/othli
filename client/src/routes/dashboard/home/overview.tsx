@@ -1,8 +1,13 @@
+import { getOverViewSummary } from "@/features/dashboard/api/getOverviewSummary";
 import AccountOverview from "@/features/dashboard/components/accounts/account-overview";
 import { DatePickerRange } from "@/features/dashboard/components/accounts/date-picker-range";
+import { ChartComponent } from "@/features/dashboard/overview/components/chart";
 import SpendingBreakdown from "@/features/dashboard/overview/components/spending-breakdown";
+import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/store";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { endOfMonth, startOfMonth } from "date-fns";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/dashboard/home/overview")({
   component: RouteComponent,
@@ -10,6 +15,10 @@ export const Route = createFileRoute("/dashboard/home/overview")({
 
 function RouteComponent() {
   const { user } = useAuthStore();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const firstDayOfMonth = startOfMonth(currentDate);
+  const lastDayOfMonth = endOfMonth(currentDate);
 
   if (!user) {
     throw redirect({ to: "/auth/login" });
@@ -26,7 +35,14 @@ function RouteComponent() {
           <AccountOverview />
         </div>
         <div className="md:col-span-3 ">
-          <SpendingBreakdown />
+          <SpendingBreakdown
+            firstDayOfMonth={firstDayOfMonth}
+            lastDayOfMonth={lastDayOfMonth}
+          />
+          <ChartComponent
+            firstDayOfMonth={firstDayOfMonth}
+            lastDayOfMonth={lastDayOfMonth}
+          />
         </div>
         <div className="bg-purple-50">Reminders / Utils</div>
       </div>

@@ -12,7 +12,7 @@ import {
   selectTransactionHistorySchema,
 } from "../db/schema";
 import { nanoid } from "nanoid";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { inArray } from "drizzle-orm"; // Import inArray for batch fetching
 
 const DateRangeSchema = z.object({
@@ -31,7 +31,7 @@ export const logEntrySchema = z.object({
   action: z.string(),
   details: z.union([
     z.object({
-      field: z.literal('payeeId'),
+      field: z.literal("payeeId"),
       source: z.string(),
       newValue: z.string(),
       oldValue: z.string(),
@@ -48,7 +48,7 @@ export const logEntrySchema = z.object({
       descriptor: z.string(),
     }),
   ]),
-  timestamp: z.date()
+  timestamp: z.date(),
 });
 
 export const insertTransactionSchema = z.object({
@@ -114,6 +114,96 @@ export const transactionsRouter = new Hono<{
       console.log(error);
       return c.json({ message: "Invalid date range" }, 400);
     }
+  }).get("/summary", zValidator("query", DateRangeSchema), async (c) => {
+
+    const { start_date, end_date } = c.req.valid("query");
+
+    const user = c.get("user");
+    if (!user) return c.json({ message: "unauthorized" }, 401);
+
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    try {
+
+
+      const [incomeResult] = await db.select({
+        totalIncome: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
+      }).from(transactions).innerJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactions.userId, user.id),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate),
+            eq(categories.isIncome, true)
+          )
+        )
+
+      const totalIncome = incomeResult?.totalIncome ?? 0;
+
+      const [expensesResult] = await db
+        .select({
+          totalExpenses: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
+        })
+        .from(transactions)
+        .innerJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactions.userId, user.id),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate),
+            eq(categories.isIncome, false)
+          )
+        );
+      const totalExpenses = Math.abs(expensesResult?.totalExpenses ?? 0);
+
+      const expensesByCategoryResult = await db
+        .select({
+          categoryId: categories.id,
+          categoryName: categories.name,
+          total: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
+        })
+        .from(transactions)
+        .innerJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactions.userId, user.id),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate),
+            eq(categories.isIncome, false)
+          )
+        )
+        .groupBy(categories.id, categories.name)
+        .orderBy(desc(sql`sum(CAST(${transactions.amount} AS numeric))`));
+
+
+      const expensesByCategory = expensesByCategoryResult.map(item => ({
+        ...item,
+        total: Math.abs(item.total ?? 0)
+      }));
+
+      const projectedExpenses = 0;
+      const projectedIncome = 0;
+      const netIncome = totalIncome - totalExpenses;
+      const projectedNetIncome = projectedIncome - projectedExpenses;
+      const currentSavingsRate = totalIncome > 0 ? (netIncome / totalIncome) * 100 : 0;
+
+      // Return the actual calculated data
+      return c.json({
+        totalIncome,
+        totalExpenses,
+        netIncome,
+        projectedNetIncome,
+        currentSavingsRate,
+        expensesByCategory,
+      }, 200);
+
+    } catch (error) {
+      console.log(error);
+      return c.json({ message: "Invalid date range" }, 400);
+    }
+
+
   })
   .post("/", zValidator("json", insertTransactionSchema), async (c) => {
     const user = c.get("user");
@@ -246,7 +336,6 @@ export const transactionsRouter = new Hono<{
         return c.json({ message: "Error fetching transaction data" }, 500);
       }
 
-
       let updateValue = value;
 
       if (field === "date") {
@@ -315,7 +404,6 @@ export const transactionsRouter = new Hono<{
             },
             timestamp: new Date(),
           });
-
       } catch (e) {
         console.error("Error updating transaction or recording history:", e);
         return c.json({ message: "Error processing update" }, 500);
@@ -324,33 +412,27 @@ export const transactionsRouter = new Hono<{
       return c.json({ message: "ok" }, 200);
     }
   )
-  .get(
-    "/:id",
+  .get("/:id", async (c) => {
+    const user = c.get("user");
 
-    async (c) => {
-      const user = c.get("user");
+    if (!user) return c.json({ message: "unauthorized" }, 401);
+    const { id } = c.req.param();
+    console.log(id);
+    try {
+      const [transaction] = await db
+        .select()
+        .from(transactions)
 
-      if (!user) return c.json({ message: "unauthorized" }, 401);
-      const { id } = c.req.param();
-      console.log(id);
-      try {
-        const [transaction] = await db
-          .select()
-          .from(transactions)
+        .where(and(eq(transactions.id, id), eq(transactions.userId, user.id)));
 
-          .where(
-            and(eq(transactions.id, id), eq(transactions.userId, user.id))
-          );
+      const validate = selectTransactionSchema.parse(transaction);
 
-        const validate = selectTransactionSchema.parse(transaction);
-
-        return c.json(validate, 200);
-      } catch (e) {
-        console.log(e);
-        return c.json({ message: "error" }, 500);
-      }
+      return c.json(validate, 200);
+    } catch (e) {
+      console.log(e);
+      return c.json({ message: "error" }, 500);
     }
-  )
+  })
   .get(
     "/history/:id",
     zValidator(
@@ -377,23 +459,22 @@ export const transactionsRouter = new Hono<{
           )
           .orderBy(desc(transactionHistory.timestamp));
 
-
         const payeeIds = new Set<number>();
         const categoryIds = new Set<number>();
 
-        rawHistory.forEach(entry => {
-          if (entry.details && typeof entry.details === 'object') {
+        rawHistory.forEach((entry) => {
+          if (entry.details && typeof entry.details === "object") {
             const details = entry.details as any; // Type assertion for easier access
-            if (details.field === 'payeeId' || details.field === 'categoryId') {
+            if (details.field === "payeeId" || details.field === "categoryId") {
               const oldValueId = parseInt(details.oldValue, 10);
               const newValueId = parseInt(details.newValue, 10);
-              const targetSet = details.field === 'payeeId' ? payeeIds : categoryIds;
+              const targetSet =
+                details.field === "payeeId" ? payeeIds : categoryIds;
               if (!isNaN(oldValueId)) targetSet.add(oldValueId);
               if (!isNaN(newValueId)) targetSet.add(newValueId);
             }
           }
         });
-
 
         const payeeMap: Record<number, string> = {};
         const categoryMap: Record<number, string> = {};
@@ -402,40 +483,51 @@ export const transactionsRouter = new Hono<{
           const payeesData = await db
             .select({ id: payees.id, name: payees.name })
             .from(payees)
-            .where(and(
-              inArray(payees.id, Array.from(payeeIds)),
-              eq(payees.userId, user.id) // Ensure user owns the payees
-            ));
-          payeesData.forEach(p => { payeeMap[p.id] = p.name; });
+            .where(
+              and(
+                inArray(payees.id, Array.from(payeeIds)),
+                eq(payees.userId, user.id) // Ensure user owns the payees
+              )
+            );
+          payeesData.forEach((p) => {
+            payeeMap[p.id] = p.name;
+          });
         }
 
         if (categoryIds.size > 0) {
           const categoriesData = await db
             .select({ id: categories.id, name: categories.name })
             .from(categories)
-            .where(and(
-              inArray(categories.id, Array.from(categoryIds)),
-              eq(categories.userId, user.id) // Ensure user owns the categories
-            ));
-          categoriesData.forEach(cat => { categoryMap[cat.id] = cat.name; });
+            .where(
+              and(
+                inArray(categories.id, Array.from(categoryIds)),
+                eq(categories.userId, user.id) // Ensure user owns the categories
+              )
+            );
+          categoriesData.forEach((cat) => {
+            categoryMap[cat.id] = cat.name;
+          });
         }
 
         // 4. Augment History
-        const augmentedHistory = rawHistory.map(entry => {
-          if (entry.details && typeof entry.details === 'object') {
+        const augmentedHistory = rawHistory.map((entry) => {
+          if (entry.details && typeof entry.details === "object") {
             const details = entry.details as any;
             let augmentedDetails = { ...details }; // Clone details
 
-            if (details.field === 'payeeId' || details.field === 'categoryId') {
+            if (details.field === "payeeId" || details.field === "categoryId") {
               const oldValueId = parseInt(details.oldValue, 10);
               const newValueId = parseInt(details.newValue, 10);
-              const lookupMap = details.field === 'payeeId' ? payeeMap : categoryMap;
+              const lookupMap =
+                details.field === "payeeId" ? payeeMap : categoryMap;
 
               if (!isNaN(oldValueId)) {
-                augmentedDetails.oldValueName = lookupMap[oldValueId] ?? `(ID: ${oldValueId})`; // Add name or fallback
+                augmentedDetails.oldValueName =
+                  lookupMap[oldValueId] ?? `(ID: ${oldValueId})`; // Add name or fallback
               }
               if (!isNaN(newValueId)) {
-                augmentedDetails.newValueName = lookupMap[newValueId] ?? `(ID: ${newValueId})`; // Add name or fallback
+                augmentedDetails.newValueName =
+                  lookupMap[newValueId] ?? `(ID: ${newValueId})`; // Add name or fallback
               }
             }
             return { ...entry, details: augmentedDetails };
@@ -443,7 +535,7 @@ export const transactionsRouter = new Hono<{
           return entry;
         });
 
-        console.log(JSON.stringify(augmentedHistory))
+        console.log(JSON.stringify(augmentedHistory));
 
         // 5. Validate and Return Augmented History
         // Adjust selectTransactionHistorySchema if needed to allow optional name fields
@@ -453,7 +545,10 @@ export const transactionsRouter = new Hono<{
         return c.json(response, 200);
       } catch (e) {
         console.error("Error fetching or processing transaction history:", e); // Log the actual error
-        return c.json({ message: "Ocurrio un error al obtener el historial" }, 500); // More specific error message
+        return c.json(
+          { message: "Ocurrio un error al obtener el historial" },
+          500
+        );
       }
     }
   );
