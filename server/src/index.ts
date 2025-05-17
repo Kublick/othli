@@ -5,6 +5,7 @@ import { accountsRouter } from "./routes/accounts";
 import { categoriesRouter } from "./routes/categories";
 import { transactionsRouter } from "./routes/transactions";
 import { payeeRouter } from "./routes/payee";
+import { budgetsRouter } from "./routes/budgets";
 import { serveStatic } from "hono/bun";
 
 const app = new Hono<{
@@ -18,7 +19,7 @@ const app = new Hono<{
 app.use(
   "*",
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", process.env.CLIENT_URL!],
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["POST", "GET", "OPTIONS", "PATCH", "DELETE", "PUT"],
     exposeHeaders: ["Content-Length"],
@@ -54,7 +55,8 @@ const routes = app
   .route("/accounts", accountsRouter)
   .route("/categories", categoriesRouter)
   .route("/transactions", transactionsRouter)
-  .route("/payees", payeeRouter);
+  .route("/payees", payeeRouter)
+  .route("/budgets", budgetsRouter);
 
 app.use(
   "*",

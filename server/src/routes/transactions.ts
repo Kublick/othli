@@ -15,7 +15,7 @@ import { nanoid } from "nanoid";
 import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { inArray } from "drizzle-orm"; // Import inArray for batch fetching
 
-const DateRangeSchema = z.object({
+export const DateRangeSchema = z.object({
   start_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in format YYYY-MM-DD"),

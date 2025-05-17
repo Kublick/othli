@@ -12,6 +12,7 @@
     "@neondatabase/serverless": "^1.0.0",
     "@react-email/components": "0.0.36",
     "better-auth": "^1.2.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.41.0",
     "drizzle-zod": "^0.7.1",

@@ -254,3 +254,33 @@ export const transactionHistory = pgTable("transaction_history", {
 
 export const selectTransactionHistorySchema = createInsertSchema(transactionHistory);
 export type SelectTransacionHistoryType = z.infer<typeof selectTransactionHistorySchema>;
+
+export const budgets = pgTable("budgets", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => categories.id, { onDelete: "cascade" }),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  amount: numeric("amount", { precision: 14, scale: 2 }).notNull(), // Assuming 2 decimal places for currency
+  createdAt: timestamp("created_at").default(new Date()).notNull(),
+  updatedAt: timestamp("updated_at").default(new Date()).notNull(),
+});
+
+export const insertBudgetSchema = createInsertSchema(budgets, {
+  startDate: z.coerce.date(),
+  amount: z.number().positive(),
+  categoryId: z.number().int(),
+}).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const selectBudgetSchema = createInsertSchema(budgets).omit({
+  userId: true,
+});

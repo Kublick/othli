@@ -43,6 +43,20 @@
       "when": 1746157640266,
       "tag": "0005_opposite_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1747012339485,
+      "tag": "0006_secret_anita_blake",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1747017070352,
+      "tag": "0007_mature_king_bedlam",
+      "breakpoints": true
     }
   ]
 }
