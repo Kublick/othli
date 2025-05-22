@@ -1,13 +1,11 @@
-import { getOverViewSummary } from "@/features/dashboard/api/getOverviewSummary";
 import AccountOverview from "@/features/dashboard/components/accounts/account-overview";
 import { DatePickerRange } from "@/features/dashboard/components/accounts/date-picker-range";
 import { ChartComponent } from "@/features/dashboard/overview/components/chart";
 import SpendingBreakdown from "@/features/dashboard/overview/components/spending-breakdown";
-import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/store";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { endOfMonth, startOfMonth } from "date-fns";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/home/overview")({
   component: RouteComponent,
