@@ -7,10 +7,15 @@ import CreateTransactionSheet from "@/features/dashboard/transactions/components
 import { TransactionTable } from "@/features/dashboard/transactions/components/transaction-table";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 // Import date-fns functions
-import { startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns";
-import { useQueryClient } from "@tanstack/react-query"; // Keep this import if used elsewhere, otherwise remove
+import {
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  addMonths,
+  format,
+} from "date-fns";
 
 const INITIAL_UPLOAD = {
   data: [],
@@ -27,14 +32,16 @@ function RouteComponent() {
   const [importedResults, setImportedResults] = useState(INITIAL_UPLOAD);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Use date-fns functions
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);
 
+  const start_date = format(firstDayOfMonth, "yyyy-MM-dd");
+  const end_date = format(lastDayOfMonth, "yyyy-MM-dd");
+
   const { data: transactions, isLoading: isLoadingTransactions } =
     getTransactions({
-      start_date: firstDayOfMonth.toISOString().slice(0, 10),
-      end_date: lastDayOfMonth.toISOString().slice(0, 10),
+      start_date,
+      end_date,
     });
 
   const formattedDate = currentDate.toLocaleDateString("es-MX", {

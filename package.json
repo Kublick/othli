@@ -8,6 +8,7 @@
     "dev": "concurrently \"bun run server\" \"bun run client\""
   },
   "dependencies": {
+    "@date-fns/utc": "^2.1.0",
     "@hono/zod-validator": "^0.4.3",
     "@neondatabase/serverless": "^1.0.0",
     "@react-email/components": "0.0.36",

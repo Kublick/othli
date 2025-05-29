@@ -26,8 +26,6 @@ const formSchema = z.object({
 
 type formType = z.infer<typeof formSchema>;
 
-console.log(import.meta.env.VITE_PUBLIC_URL);
-
 const LoginForm = () => {
   const { login, loginWithGoogle } = useAuthStore();
 

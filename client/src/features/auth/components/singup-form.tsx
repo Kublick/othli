@@ -80,7 +80,7 @@ const SignUp = ({
         {...props}
       >
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="text-2xl font-bold">Ingresa a tu cuenta</h1>
+          <h1 className="text-2xl font-bold">Registra tu cuenta</h1>
         </div>
         <div className="grid gap-6">
           <div className="grid gap-2">

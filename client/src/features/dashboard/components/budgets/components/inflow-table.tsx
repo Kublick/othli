@@ -19,7 +19,6 @@ import { useEffect, useState } from "react";
 
 import type { BudgetType } from "./columns";
 // import { InputIcon } from '@/components/ui/input-icon';
-import React from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

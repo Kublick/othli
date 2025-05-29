@@ -1,7 +1,11 @@
+import { BudgetInput } from "@/components/ui/BudgetInput";
+import { useUpdateBudget } from "@/features/dashboard/api/update-budget-item";
 import { client } from "@/lib/client";
+import { useLoadingStore } from "@/store/loading-store";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { InferResponseType } from "hono";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export type BudgetType = InferResponseType<
   typeof client.api.budgets.summary.$get,
@@ -22,17 +26,77 @@ export interface CategoryRowData {
   id: string;
   name: string;
   isIncome: boolean; // Used for filtering into inflow/outflow lists by parent
-
   // Inflow specific fields (populated if isIncome is true)
-  expected: number | null;
   budgetable: number | null;
-
   // Outflow specific fields (populated if isIncome is false)
   budgeted: number | null;
   available: number | null;
-
   // Common field for activity
   activity: number;
+}
+
+function ExpectedCell({ info }: { info: any }) {
+  const rowId = String(info.row.original.id);
+  const initialValue = info.getValue();
+  const [value, setValue] = useState<string>(info.row.original.budgeted ?? "");
+  const [originalValue, setOriginalValue] = useState<string>(
+    info.row.original.budgeted ?? ""
+  );
+
+  const updateItemMutation = useUpdateBudget();
+
+  const { start_date } = info.table.options?.meta;
+
+  console.log(start_date);
+
+  const isRowLoading = useLoadingStore((state) => state.isRowLoading(rowId));
+  const setRowLoading = useLoadingStore((state) => state.setRowLoading);
+
+  const handleChange = (newValue: string) => setValue(newValue);
+
+  if (initialValue === null && value === null)
+    return (
+      <div className="text-right text-gray-500">{formatCurrency(null)} </div>
+    );
+
+  const handleBlur = async () => {
+    if (value !== originalValue) {
+      setRowLoading(rowId, true);
+
+      try {
+        await updateItemMutation.mutateAsync({
+          id: rowId,
+          amount: +value,
+          budget_month: start_date,
+        });
+        setOriginalValue(value);
+      } catch (e) {
+        setValue(originalValue);
+      } finally {
+        setRowLoading(rowId, false);
+      }
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      (event.target as HTMLInputElement).blur();
+    } else if (event.key === "Escape") {
+      setValue(originalValue);
+      (event.target as HTMLInputElement).blur();
+    }
+  };
+
+  return (
+    <BudgetInput
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      value={value}
+      disabled={isRowLoading}
+    />
+  );
 }
 
 export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
@@ -41,7 +105,7 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
     accessorKey: "name",
     header: () => (
       <div className="text-left pl-4 font-semibold text-gray-600 uppercase tracking-wider">
-        INFLOW
+        Presupuestado
       </div>
     ),
     cell: (info) => (
@@ -54,60 +118,18 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
   {
     accessorKey: "expected",
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        EXPECTED
+      <div className="font-semibold text-gray-600 uppercase tracking-wider">
+        Presupuesto
       </div>
     ),
-    cell: (info) => {
-      const initialValue = info.getValue<number | null>();
-      const [value, setValue] = useState(initialValue);
-      const { updateBudget } = info.table.options.meta as any; // Assuming meta.updateBudget exists
-
-      useEffect(() => {
-        setValue(initialValue);
-      }, [initialValue]);
-
-      const handleUpdate = () => {
-        const numericValue = Number(value);
-        if (!isNaN(numericValue) && numericValue !== initialValue) {
-          updateBudget?.(info.row.original.id, "expected", numericValue);
-        }
-      };
-
-      if (initialValue === null && value === null)
-        // Show placeholder if initial is null and not being edited
-        return (
-          <div className="text-right text-gray-500">
-            {formatCurrency(null)}{" "}
-            {/* Or a specific placeholder like "MX$0.00" if preferred */}
-          </div>
-        );
-
-      return (
-        <input
-          type="number" // Use type="number" for better input handling
-          className="text-right w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={value ?? ""}
-          onChange={(e) => setValue(Number(e.target.value))}
-          onBlur={handleUpdate}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleUpdate();
-              (e.target as HTMLInputElement).blur(); // Lose focus to prevent double update on blur
-            }
-          }}
-          placeholder="MX$0.00"
-        />
-      );
-    },
-
+    cell: (info) => <ExpectedCell info={info} />,
     size: 180,
   },
   {
     accessorKey: "activity",
     header: () => (
       <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        ACTIVITY
+        Actividad
       </div>
     ),
     cell: (info) => (
@@ -121,7 +143,7 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
     accessorKey: "budgetable",
     header: () => (
       <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        BUDGETABLE
+        Disponible
       </div>
     ),
     cell: (info) => (
@@ -149,7 +171,7 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     accessorKey: "name",
     header: () => (
       <div className="text-left pl-4 font-semibold text-gray-600 uppercase tracking-wider">
-        OUTFLOW
+        Gastos
       </div>
     ),
     cell: (info) => (
@@ -162,59 +184,19 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
   {
     accessorKey: "budgeted",
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        BUDGETED
+      <div className=" font-semibold text-gray-600 uppercase tracking-wider">
+        Presupuestado
       </div>
     ),
-    cell: (info) => {
-      const initialValue = info.getValue<number | null>();
-      const [value, setValue] = useState(initialValue);
-      const { updateBudget } = info.table.options.meta as any; // Assuming meta.updateBudget exists
+    cell: (info) => <ExpectedCell info={info} />,
 
-      useEffect(() => {
-        setValue(initialValue);
-      }, [initialValue]);
-
-      const handleUpdate = () => {
-        const numericValue = Number(value);
-        if (!isNaN(numericValue) && numericValue !== initialValue) {
-          updateBudget?.(info.row.original.id, "budgeted", numericValue);
-        }
-      };
-
-      if (initialValue === null && value === null)
-        // Show placeholder if initial is null and not being edited
-        return (
-          <div className="text-right text-gray-500">
-            {formatCurrency(null)}{" "}
-            {/* Or a specific placeholder like "MX$0.00" if preferred */}
-          </div>
-        );
-
-      return (
-        <input
-          type="number" // Use type="number" for better input handling
-          className="text-right w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={value ?? ""}
-          onChange={(e) => setValue(Number(e.target.value))}
-          onBlur={handleUpdate}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleUpdate();
-              (e.target as HTMLInputElement).blur(); // Lose focus to prevent double update on blur
-            }
-          }}
-          placeholder="MX$0.00"
-        />
-      );
-    },
     size: 180,
   },
   {
     accessorKey: "activity",
     header: () => (
       <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        ACTIVITY
+        Actividad
       </div>
     ),
     cell: (info) => {
@@ -230,7 +212,7 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     accessorKey: "available",
     header: () => (
       <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
-        AVAILABLE
+        Disponible
       </div>
     ),
     cell: (info) => {
@@ -264,12 +246,12 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
 
 // Keeping the original InflowColumn and BudgetType for now, in case they are used elsewhere.
 // Consider removing if they are fully replaced by the new structure for budget display.
-export const InflowColumn: ColumnDef<BudgetType>[] = [
-  {
-    header: "Ingresos",
-    accessorKey: "categories",
-    cell: (info) => {
-      return info.row.original.categories.map((category) => category.isIncome);
-    },
-  },
-];
+// const InflowColumn: ColumnDef<BudgetType>[] = [
+//   {
+//     header: "Ingresos",
+//     accessorKey: "categories",
+//     cell: (info) => {
+//       return info.row.original.categories.map((category) => category.isIncome);
+//     },
+//   },
+// ];

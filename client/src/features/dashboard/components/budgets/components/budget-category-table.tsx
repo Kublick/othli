@@ -3,6 +3,7 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  type TableMeta,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -23,18 +24,14 @@ import type { CategoryRowData } from "./columns";
 interface DataTableProps<TData extends CategoryRowData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  tableTitle?: string; // Optional title for the table (e.g., INFLOW, OUTFLOW)
-  updateBudget?: (
-    categoryId: string,
-    field: "expected" | "budgeted",
-    value: number
-  ) => void;
+  tableTitle?: string;
+  start_date: string;
 }
 
 export function BudgetCategoryTable({
   columns,
   data,
-  updateBudget,
+  start_date,
 }: DataTableProps<CategoryRowData, unknown>) {
   const [tableData, setTableData] = useState<CategoryRowData[]>([]);
   const [filtering, setFiltering] = useState("");
@@ -55,7 +52,7 @@ export function BudgetCategoryTable({
     onGlobalFilterChange: setFiltering,
     // globalFilterFn: "includesString",
     meta: {
-      updateBudget,
+      start_date,
     },
   });
 
