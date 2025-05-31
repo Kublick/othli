@@ -239,9 +239,7 @@ export const budgetsRouter = new Hono<{
 
         for (const monthDate of monthsInInterval) {
           const monthStart = startOfMonth(monthDate);
-
           const monthEnd = endOfMonth(monthDate);
-
           const monthKey = format(monthStart, "yyyy-MM");
 
           let monthActivity = 0;
@@ -256,11 +254,11 @@ export const budgetsRouter = new Hono<{
             : Math.abs(monthActivity);
 
           let monthBudgeted = 0;
+          // FIX: Only count budgets whose startDate is in the current month
           const budgetsForCategoryInMonth = userBudgets.filter(
             (b) =>
               b.categoryId === category.id &&
-              startOfMonth(new Date(b.startDate as Date)) <= monthStart &&
-              endOfMonth(new Date(b.endDate as Date)) >= monthEnd
+              format(new Date(b.startDate), "yyyy-MM") === monthKey
           );
 
           if (budgetsForCategoryInMonth.length > 0) {

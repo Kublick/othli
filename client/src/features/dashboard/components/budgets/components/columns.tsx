@@ -4,8 +4,7 @@ import { client } from "@/lib/client";
 import { useLoadingStore } from "@/store/loading-store";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { InferResponseType } from "hono";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
 export type BudgetType = InferResponseType<
   typeof client.api.budgets.summary.$get,
@@ -25,13 +24,9 @@ const formatCurrency = (
 export interface CategoryRowData {
   id: string;
   name: string;
-  isIncome: boolean; // Used for filtering into inflow/outflow lists by parent
-  // Inflow specific fields (populated if isIncome is true)
+  isIncome: boolean;
   budgetable: number | null;
-  // Outflow specific fields (populated if isIncome is false)
   budgeted: number | null;
-  available: number | null;
-  // Common field for activity
   activity: number;
 }
 
@@ -46,8 +41,6 @@ function ExpectedCell({ info }: { info: any }) {
   const updateItemMutation = useUpdateBudget();
 
   const { start_date } = info.table.options?.meta;
-
-  console.log(start_date);
 
   const isRowLoading = useLoadingStore((state) => state.isRowLoading(rowId));
   const setRowLoading = useLoadingStore((state) => state.setRowLoading);
@@ -209,24 +202,24 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     size: 180,
   },
   {
-    accessorKey: "available",
+    accessorKey: "budgetable", // Changed from "available"
     header: () => (
       <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
         Disponible
       </div>
     ),
     cell: (info) => {
-      const available = info.getValue<number | null>();
+      const budgetableAmount = info.getValue<number | null>(); // Changed variable name for clarity
       let textColor = "text-gray-700";
-      if (available !== null && available > 0)
+      if (budgetableAmount !== null && budgetableAmount > 0)
         textColor = "text-green-700 font-bold";
-      else if (available !== null && available < 0)
+      else if (budgetableAmount !== null && budgetableAmount < 0)
         textColor = "text-red-700 font-bold";
-      else if (available === 0) textColor = "text-gray-500"; // For MX$0.00
+      else if (budgetableAmount === 0) textColor = "text-gray-500"; // For MX$0.00
 
       return (
         <div className={`text-right ${textColor}`}>
-          {formatCurrency(available)}
+          {formatCurrency(budgetableAmount)}
         </div>
       );
     },

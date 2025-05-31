@@ -3,7 +3,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  type TableMeta,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -57,9 +56,8 @@ export function BudgetCategoryTable({
   });
 
   return (
-    <div>
-      <div className="flex justify-end pb-8 items-center">
-        {/* Search input can be kept or removed based on whether it's needed for both tables or handled by a parent */}
+    <div className="py-4 lg:py-8">
+      {/* <div className="flex justify-end pb-8 items-center">
         <InputIcon
           type="text w-64"
           value={filtering ?? ""}
@@ -67,12 +65,10 @@ export function BudgetCategoryTable({
           placeholder="Buscar"
           fullWidth={false}
         />
-      </div>
+      </div> */}
 
       <div className="rounded-md border">
-        {/* Apply table-layout: fixed here */}
         <Table style={{ tableLayout: "fixed" }}>
-          {/* The header row with INFLOW/OUTFLOW is now part of the column definition */}
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -80,7 +76,7 @@ export function BudgetCategoryTable({
                   return (
                     <TableHead
                       key={header.id}
-                      style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                      style={{ width: `${header.getSize()}px` }}
                     >
                       {header.isPlaceholder
                         ? null

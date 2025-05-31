@@ -19,6 +19,7 @@ import {
 } from "date-fns";
 import { getBudgets } from "@/features/dashboard/api/get-budgets";
 import { BudgetCategoryTable } from "@/features/dashboard/components/budgets/components/budget-category-table";
+import BudgetOverview from "@/features/dashboard/components/budgets/components/budget-overview";
 
 const fetchBudgetSummary = async (start_date: string, end_date: string) => {
   const res = await client.api.budgets.summary.$get({
@@ -53,10 +54,10 @@ function transformBudgetData(
       name: category.name,
       isIncome: category.isIncome,
       budgeted: category.totalBudgeted,
-      available: category.totalBalance,
       activity: category.totalActivity,
-      budgetable: 0,
+      budgetable: category.totalBalance,
     };
+
     if (category.isIncome) {
       inflowData.push(categoryRow);
     } else {
@@ -66,7 +67,6 @@ function transformBudgetData(
     return { inflowData, outflowData };
   });
 
-  console.log(outflowData);
   return { inflowData, outflowData };
 }
 
@@ -83,7 +83,7 @@ function BudgetsPage() {
     start_date,
     end_date,
   });
-
+  console.log(budgetData);
   const formattedDate = currentDate.toLocaleDateString("es-MX", {
     month: "long",
     year: "numeric",
@@ -95,6 +95,7 @@ function BudgetsPage() {
   const { inflowData, outflowData } = budgetData
     ? transformBudgetData(budgetData)
     : { inflowData: [], outflowData: [] };
+  console.log("🚀 ~ BudgetsPage ~ budgetData:", budgetData);
 
   const goToPreviousMonth = () => {
     setCurrentDate((prevDate) => subMonths(prevDate, 1));
@@ -117,17 +118,23 @@ function BudgetsPage() {
           {displayDate}
         </h2>
       </div>
-      <div className="p-4 space-y-8">
-        <BudgetCategoryTable
-          data={inflowData}
-          columns={inflowTableColumns}
-          start_date={start_date}
-        />
-        <BudgetCategoryTable
-          data={outflowData}
-          columns={outflowTableColumns}
-          start_date={start_date}
-        />
+      <div className="grid lg:grid-cols-5 gap-4 ">
+        <div className="col-span-4 space-y-8">
+          <BudgetCategoryTable
+            data={inflowData}
+            columns={inflowTableColumns}
+            start_date={start_date}
+          />
+          <BudgetCategoryTable
+            data={outflowData}
+            columns={outflowTableColumns}
+            start_date={start_date}
+          />
+        </div>
+
+        <div className="mt-8">
+          <BudgetOverview inflowData={inflowData} outflowData={outflowData} />
+        </div>
       </div>
     </div>
   );
