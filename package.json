@@ -12,20 +12,20 @@
     "@hono/zod-validator": "^0.4.3",
     "@neondatabase/serverless": "^1.0.0",
     "@react-email/components": "0.0.36",
-    "better-auth": "^1.2.5",
+    "better-auth": "^1.2.8",
     "date-fns": "^4.1.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "drizzle-orm": "^0.41.0",
     "drizzle-zod": "^0.7.1",
-    "hono": "^4.7.7",
+    "hono": "^4.7.11",
     "nanoid": "^5.1.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "resend": "^4.2.0"
+    "resend": "^4.5.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/react": "^19.1.0",
+    "@types/react": "^19.1.6",
     "concurrently": "^9.1.2",
     "drizzle-kit": "^0.30.6"
   }
