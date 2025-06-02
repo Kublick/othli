@@ -8,8 +8,6 @@ import { useState } from "react";
 const AccountOverview = () => {
   const { data, isLoading } = getUserAccounts();
 
-  
-
   const [expandedSections, setExpandedSections] = useState({
     cash: true,
     investment: true,

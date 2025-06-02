@@ -13,7 +13,7 @@ export const Route = createFileRoute("/dashboard/home/overview")({
 
 function RouteComponent() {
   const { user } = useAuthStore();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate] = useState(new Date());
 
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);

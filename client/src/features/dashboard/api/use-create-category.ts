@@ -1,16 +1,17 @@
 import { client } from "@/lib/client";
+import type { InsertCategoryType } from "@/types/index";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { InferRequestType, InferResponseType } from "hono";
+import type { InferResponseType } from "hono";
 import { toast } from "sonner";
 
 type ResponseType = InferResponseType<typeof client.api.categories.$post, 200>;
 
-type RequestType = InferRequestType<typeof client.api.categories.$post>["json"];
+
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<ResponseType, Error, RequestType>({
+  const mutation = useMutation<ResponseType, Error, InsertCategoryType>({
     mutationFn: async (json) => {
       const {
         name,

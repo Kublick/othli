@@ -5,7 +5,6 @@ import { db } from "../db/drizzle";
 import {
   budgets,
   categories,
-  insertBudgetSchema,
   transactions,
 } from "../db/schema";
 import { auth } from "../lib/auth";
@@ -15,7 +14,6 @@ import {
   eachMonthOfInterval,
   endOfMonth,
   format,
-  lastDayOfMonth,
   startOfMonth,
 } from "date-fns";
 

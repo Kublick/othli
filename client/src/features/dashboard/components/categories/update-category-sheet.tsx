@@ -7,8 +7,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 
 import { useForm } from "react-hook-form";
 import {
@@ -25,9 +24,13 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { useCreateCategory } from "../../api/use-create-category";
-import { insertCategorySchema } from "./create-category-sheet";
+
 import { useGetCategory } from "../../api/get-category";
+import { useUpdateCategory } from "../../api/use-update-category";
+import {
+  updateCategorySchema,
+  type UpdateCategorySchemaType,
+} from "@/types/index";
 
 interface Props {
   id: string;
@@ -35,22 +38,12 @@ interface Props {
 
 const CategoryUpdateSheet = ({ id }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const mutation = useCreateCategory();
+  const mutation = useUpdateCategory();
 
   const { data } = useGetCategory(id, isOpen);
 
-  useEffect(() => {
-    form.reset({
-      name: data?.name,
-      description: data?.description,
-      excludeFromBudget: data?.excludeFromBudget,
-      excludeFromTotals: data?.excludeFromTotals,
-      isIncome: data?.isIncome,
-    });
-  }, [data]);
-
-  const form = useForm<z.infer<typeof insertCategorySchema>>({
-    resolver: zodResolver(insertCategorySchema),
+  const form = useForm<UpdateCategorySchemaType>({
+    resolver: standardSchemaResolver(updateCategorySchema),
     defaultValues: {
       name: "",
       description: "",
@@ -60,7 +53,20 @@ const CategoryUpdateSheet = ({ id }: Props) => {
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof insertCategorySchema>) => {
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        id,
+        name: data.name ?? "",
+        description: data.description ?? "",
+        excludeFromBudget: data.excludeFromBudget ?? false,
+        excludeFromTotals: data.excludeFromTotals ?? false, //
+        isIncome: data.isIncome ?? false,
+      });
+    }
+  }, [data, form, id]);
+
+  const onSubmit = async (data: UpdateCategorySchemaType) => {
     mutation.mutate(data);
     form.reset();
     setIsOpen(false);
@@ -202,7 +208,7 @@ const CategoryUpdateSheet = ({ id }: Props) => {
                   Cancelar
                 </Button>
 
-                <Button type="submit">Agregar</Button>
+                <Button type="submit">Actualizar</Button>
               </div>
             </form>
           </Form>

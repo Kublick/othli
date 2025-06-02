@@ -57,6 +57,13 @@
       "when": 1747017070352,
       "tag": "0007_mature_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1748829779391,
+      "tag": "0008_lying_khan",
+      "breakpoints": true
     }
   ]
 }

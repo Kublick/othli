@@ -1,8 +1,9 @@
+
 import { client } from "@/lib/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { InferResponseType } from "hono";
 import { toast } from "sonner";
-import type { InsertCategory } from "../components/categories/create-category-sheet";
+import type { UpdateCategorySchemaType } from "@/types/index";
 
 type ResponseType = InferResponseType<typeof client.api.categories[":id"]["$patch"]>;
 
@@ -11,10 +12,11 @@ type ResponseType = InferResponseType<typeof client.api.categories[":id"]["$patc
 export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<ResponseType, Error, InsertCategory>({
+  const mutation = useMutation<ResponseType, Error, UpdateCategorySchemaType>({
 
     mutationFn: async (json) => {
       const {
+        id,
         name,
         isIncome,
         description,
@@ -31,7 +33,7 @@ export const useUpdateCategory = () => {
           excludeFromTotals,
         },
         param: {
-          id: json.id,
+          id
         }
       });
 

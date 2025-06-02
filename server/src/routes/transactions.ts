@@ -9,7 +9,6 @@ import {
   selectTransactionSchema,
   transactions,
   transactionHistory,
-  selectTransactionHistorySchema,
 } from "../db/schema";
 import { nanoid } from "nanoid";
 import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
@@ -274,7 +273,7 @@ export const transactionsRouter = new Hono<{
         })
         .returning();
 
-      const history = await db.insert(transactionHistory).values({
+      await db.insert(transactionHistory).values({
         transactionId: transaction.id,
         userId: user.id,
         action: "created",

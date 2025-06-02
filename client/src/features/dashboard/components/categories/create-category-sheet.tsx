@@ -7,9 +7,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-// import { insertCategorySchema } from "@/server/db/schema";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -25,24 +23,14 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { useCreateCategory } from "../../api/use-create-category";
-
-export const insertCategorySchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  excludeFromBudget: z.boolean(),
-  excludeFromTotals: z.boolean(),
-  isIncome: z.boolean(),
-});
-
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
+import { insertCategorySchema, type InsertCategoryType } from "@/types/index";
 
 const CategorySheet = () => {
   const [isOpen, setIsOpen] = useState(false);
   const mutation = useCreateCategory();
 
-  const form = useForm<z.infer<typeof insertCategorySchema>>({
-    resolver: zodResolver(insertCategorySchema),
+  const form = useForm<InsertCategoryType>({
+    resolver: standardSchemaResolver(insertCategorySchema),
     defaultValues: {
       name: "",
       description: "",
@@ -51,8 +39,8 @@ const CategorySheet = () => {
       isIncome: false,
     },
   });
-
-  const onSubmit = async (data: z.infer<typeof insertCategorySchema>) => {
+  console.log(form.formState.errors);
+  const onSubmit = async (data: InsertCategoryType) => {
     mutation.mutate(data);
     form.reset();
     setIsOpen(false);

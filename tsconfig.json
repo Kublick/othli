@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "module": "esnext", // ✅ esto es necesario
+    "target": "esnext", // (opcional pero recomendable con Bun)
+    "moduleResolution": "bundler", // Bun-friendly
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react"

@@ -1,11 +1,4 @@
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -22,14 +15,7 @@ import {
 import { getOverViewSummary } from "../../api/getOverviewSummary";
 import type { InferResponseType } from "hono";
 import type { client } from "@/lib/client";
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
+
 const chartConfig = {
   desktop: {
     label: "Desktop",

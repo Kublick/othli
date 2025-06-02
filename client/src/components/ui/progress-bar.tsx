@@ -69,7 +69,18 @@ export function ProgressBar({
       (sum, segment) => sum + segment.value,
       0
     );
+    console.log(totalValue);
+    // Calculate percentage for each segment
+    const segmentPercentages = segments.map((segment) => {
+      return (segment.value / totalValue) * 100;
+    });
 
+    console.log(
+      "🚀 ~ segmentPercentages ~ segmentPercentages:",
+      segmentPercentages
+    );
+
+    // Calculate cumulative percentage for each segment
     // Multi-segment progress bar
     return segments.map((segment, index) => {
       const percentage = (segment.value / max) * 100;

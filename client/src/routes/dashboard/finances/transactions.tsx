@@ -32,6 +32,8 @@ function RouteComponent() {
   const [importedResults, setImportedResults] = useState(INITIAL_UPLOAD);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  console.log(importedResults);
+
   const firstDayOfMonth = startOfMonth(currentDate);
   const lastDayOfMonth = endOfMonth(currentDate);
 

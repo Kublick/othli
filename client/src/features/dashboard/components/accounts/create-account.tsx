@@ -1,6 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -21,13 +20,7 @@ import {
 } from "@/components/ui/select";
 
 import { useCreateAccounts } from "../../api/use-create-account";
-
-const insertAccountSchema = z.object({
-  name: z.string(),
-  balance: z.string(),
-  institutionName: z.string(),
-  typeName: z.enum(["efectivo", "debito", "credito", "inversion"]),
-});
+import { insertAccountSchema, type InsertAccountType } from "@/types/index";
 
 interface Props {
   setIsOpen: (isOpen: boolean) => void;
@@ -36,8 +29,8 @@ interface Props {
 export function CreateAccount({ setIsOpen }: Props) {
   const mutation = useCreateAccounts();
 
-  const form = useForm<z.infer<typeof insertAccountSchema>>({
-    resolver: zodResolver(insertAccountSchema),
+  const form = useForm<InsertAccountType>({
+    resolver: standardSchemaResolver(insertAccountSchema),
     defaultValues: {
       name: "",
       balance: "",
@@ -45,7 +38,7 @@ export function CreateAccount({ setIsOpen }: Props) {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof insertAccountSchema>) => {
+  const onSubmit = async (values: InsertAccountType) => {
     const { name, typeName, balance, institutionName } = values;
 
     const data = {
@@ -56,6 +49,7 @@ export function CreateAccount({ setIsOpen }: Props) {
     };
 
     mutation.mutate(data);
+    setIsOpen(false);
   };
 
   return (

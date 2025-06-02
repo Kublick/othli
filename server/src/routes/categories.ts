@@ -3,13 +3,13 @@ import { Hono } from "hono";
 import { db } from "../db/drizzle";
 import {
   categories,
-  insertCategorySchema,
-  selectCategorySchema,
+
 } from "../db/schema";
 import { asc, eq } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { auth } from "../lib/auth";
+import { insertCategorySchema, type SelectCategoryType } from "../db/schema";
 
 export const categoriesRouter = new Hono<{
   Variables: {
@@ -45,8 +45,6 @@ export const categoriesRouter = new Hono<{
       if (!user) return c.json({ message: "unauthorized" }, 401);
       const { id } = c.req.valid("param");
 
-      console.log(id);
-
       try {
         const data = await db
           .select()
@@ -57,13 +55,13 @@ export const categoriesRouter = new Hono<{
         if (data.length === 0) {
           return c.json({ message: "category not found" }, 404);
         }
-        return c.json<z.infer<typeof selectCategorySchema>>(data[0], 200);
+        return c.json<SelectCategoryType>(data[0], 200);
       } catch (e) {
         console.log(e);
         return c.json({ message: "error" }, 500);
       }
 
-      return c.json({ id }, 200);
+
     }
   )
   .post("/", zValidator("json", insertCategorySchema), async (c) => {

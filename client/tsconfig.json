@@ -20,6 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "rootDirs": ["./", "../server"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

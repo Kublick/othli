@@ -17,7 +17,6 @@ import {
 
 import { useEffect, useState } from "react";
 
-import { InputIcon } from "@/components/ui/input-icon";
 import type { CategoryRowData } from "./columns";
 
 interface DataTableProps<TData extends CategoryRowData, TValue> {

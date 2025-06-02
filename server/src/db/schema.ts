@@ -1,4 +1,5 @@
 
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -9,10 +10,11 @@ import {
   pgEnum,
   integer,
   numeric,
-  jsonb, // Import jsonb type
+  jsonb
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
 
 export const userRoleEnum = pgEnum("user_role", ["user", "assistant", "admin"]);
 
@@ -88,15 +90,6 @@ export const categories = pgTable("categories", {
     .references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
-  id: true,
-  userId: true,
-});
-
-export const selectCategorySchema = createInsertSchema(categories).omit({
-  userId: true,
-});
-
 export const categoryGroups = pgTable("category_groups", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 40 }).notNull(),
@@ -130,8 +123,8 @@ export const accounts = pgTable("accounts", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").notNull().default(new Date()),
-  updatedAt: timestamp("updated_at").notNull().default(new Date()),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const baseSchema = createInsertSchema(accounts).omit({
@@ -172,36 +165,37 @@ export const transactions = pgTable("transactions", {
     onDelete: "set null",
   }),
   date: timestamp("date").notNull(),
-  createdAt: timestamp("created_at").default(new Date()).notNull(),
-  updatedAt: timestamp("updated_at").default(new Date()).notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
-// export const transactionsRelations = relations(transactions, ({ one }) => ({
-//   account: one(accounts, {
-//     fields: [transactions.accountId],
-//     references: [accounts.id],
-//   }),
-//   user: one(user, {
-//     fields: [transactions.userId],
-//     references: [user.id],
-//   }),
-//   categoryRelation: one(categories, {
-//     fields: [transactions.categoryId],
-//     references: [categories.id],
-//   }),
-//   transferAccount: one(accounts, {
-//     fields: [transactions.transferAccountId],
-//     references: [accounts.id],
-//     relationName: "transferAccount",
-//   }),
-//   payee: one(payees, {
-//     fields: [transactions.payeeId],
-//     references: [payees.id],
-//   }),
-// }));
+
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  account: one(accounts, {
+    fields: [transactions.accountId],
+    references: [accounts.id],
+  }),
+  user: one(user, {
+    fields: [transactions.userId],
+    references: [user.id],
+  }),
+  categoryRelation: one(categories, {
+    fields: [transactions.categoryId],
+    references: [categories.id],
+  }),
+  transferAccount: one(accounts, {
+    fields: [transactions.transferAccountId],
+    references: [accounts.id],
+    relationName: "transferAccount",
+  }),
+  payee: one(payees, {
+    fields: [transactions.payeeId],
+    references: [payees.id],
+  }),
+}));
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
-
   userId: true,
   createdAt: true,
   updatedAt: true,
@@ -223,8 +217,8 @@ export const rules = pgTable("rules", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }), // Rule belongs to a user
-  createdAt: timestamp("created_at").notNull().default(new Date()),
-  updatedAt: timestamp("updated_at").notNull().default(new Date()),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const payees = pgTable("payees", {
@@ -233,8 +227,8 @@ export const payees = pgTable("payees", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }), // Payee belongs to a user
-  createdAt: timestamp("created_at").notNull().default(new Date()),
-  updatedAt: timestamp("updated_at").notNull().default(new Date()),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const transactionHistory = pgTable("transaction_history", {
@@ -248,7 +242,7 @@ export const transactionHistory = pgTable("transaction_history", {
   action: text("action").notNull(), // 'created' or 'updated'
   // Use jsonb to store varying details based on action
   details: jsonb("details"), // Can store { field, oldValue, newValue, metadata } or { descriptor, metadata }
-  timestamp: timestamp("timestamp").notNull().default(new Date()), // Renamed from changedAt for clarity
+  timestamp: timestamp("timestamp").notNull().default(sql`CURRENT_TIMESTAMP`), // Renamed from changedAt for clarity
 });
 
 
@@ -266,8 +260,8 @@ export const budgets = pgTable("budgets", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   amount: numeric("amount", { precision: 14, scale: 2 }).notNull(), // Assuming 2 decimal places for currency
-  createdAt: timestamp("created_at").default(new Date()).notNull(),
-  updatedAt: timestamp("updated_at").default(new Date()).notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const insertBudgetSchema = createInsertSchema(budgets, {
@@ -284,3 +278,15 @@ export const insertBudgetSchema = createInsertSchema(budgets, {
 export const selectBudgetSchema = createInsertSchema(budgets).omit({
   userId: true,
 });
+
+
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  userId: true,
+})
+
+export const selectCategorySchema = createInsertSchema(categories).omit({
+  userId: true,
+});
+
+export type SelectCategoryType = z.infer<typeof selectCategorySchema>;

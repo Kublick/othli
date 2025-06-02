@@ -347,7 +347,7 @@ export const Columns: ColumnDef<TransactionType>[] = [
     size: 40,
     header: "Acciones",
     cell: (info) => {
-      const [open, setOpen] = useState(false);
+      const [open] = useState(false);
       const rowId = String(info.row.original.id);
       const isRowLoading = useLoadingStore((state) =>
         state.isRowLoading(rowId)
