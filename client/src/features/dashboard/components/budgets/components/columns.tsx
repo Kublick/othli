@@ -1,10 +1,14 @@
 import { BudgetInput } from "@/components/ui/BudgetInput";
+import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { useUpdateBudget } from "@/features/dashboard/api/update-budget-item";
 import { client } from "@/lib/client";
 import { useLoadingStore } from "@/store/loading-store";
+import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { InferResponseType } from "hono";
+import { MessageCircleQuestion, Search } from "lucide-react";
 import { useState } from "react";
+// import { BudgetTooltip } from "./budgeted-tooltip";
 
 export type BudgetType = InferResponseType<
   typeof client.api.budgets.summary.$get,
@@ -17,7 +21,7 @@ const formatCurrency = (
   placeholder: string = "MX$0.00"
 ) => {
   if (value === null || value === undefined || isNaN(value)) return placeholder;
-  return `MX$${value.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `$${value.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 // This will be the type for each row in the budget tables
@@ -28,6 +32,12 @@ export interface CategoryRowData {
   budgetable: number | null;
   budgeted: number | null;
   activity: number;
+  ocurrences?: {
+    month: string;
+    activity: number;
+    budgeted: number;
+    balance: number;
+  }[];
 }
 
 function ExpectedCell({ info }: { info: any }) {
@@ -48,9 +58,7 @@ function ExpectedCell({ info }: { info: any }) {
   const handleChange = (newValue: string) => setValue(newValue);
 
   if (initialValue === null && value === null)
-    return (
-      <div className="text-right text-gray-500">{formatCurrency(null)} </div>
-    );
+    return <div className="text-right ">{formatCurrency(null)} </div>;
 
   const handleBlur = async () => {
     if (value !== originalValue) {
@@ -82,13 +90,19 @@ function ExpectedCell({ info }: { info: any }) {
   };
 
   return (
-    <BudgetInput
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      value={value}
-      disabled={isRowLoading}
-    />
+    <div className="flex items-center gap-2">
+      <BudgetInput
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        value={value}
+        disabled={isRowLoading}
+      />
+      {/* <BudgetTooltip
+        data={info.row.original}
+        // onClear={() => handleInputChange(itemData.id, '0')} // Example clear handler
+      /> */}
+    </div>
   );
 }
 
@@ -97,22 +111,28 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
     id: "categoryName",
     accessorKey: "name",
     header: () => (
-      <div className="text-left pl-4 font-semibold text-gray-600 uppercase tracking-wider">
-        Presupuestado
+      <div className="text-left pl-4 font-semibold uppercase tracking-wider">
+        Ingresos
       </div>
     ),
     cell: (info) => (
-      <div className="pl-4 font-medium text-gray-800">
-        {info.getValue<string>()}
-      </div>
+      <div className="pl-4 font-medium ">{info.getValue<string>()}</div>
     ),
-    size: 280, // Increased size for name
+    size: 280,
   },
   {
     accessorKey: "expected",
     header: () => (
-      <div className="font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="font-semibold  uppercase tracking-wider flex gap-2 items-center hover:text-black">
         Presupuesto
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <MessageCircleQuestion size={14} />
+          </TooltipTrigger>
+          <TooltipContent>
+            Cantidad de ingresos esperados en esta categoria.
+          </TooltipContent>
+        </Tooltip>
       </div>
     ),
     cell: (info) => <ExpectedCell info={info} />,
@@ -121,22 +141,42 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
   {
     accessorKey: "activity",
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="flex justify-end gap-2 items-center text-right font-semibold uppercase tracking-wider">
         Actividad
       </div>
     ),
     cell: (info) => (
-      <div className="text-right text-gray-700">
-        {formatCurrency(info.getValue<number>())}
+      <div className="flex justify-end w-full">
+        <div className="flex justify-between items-center gap-2">
+          {info.getValue<number>() !== 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Search size={14} />
+              </TooltipTrigger>
+              <TooltipContent>Ver transacciones</TooltipContent>
+            </Tooltip>
+          )}
+          <div className="text-right ">
+            {formatCurrency(info.getValue<number>())}
+          </div>
+        </div>
       </div>
     ),
-    size: 180, // Adjusted size
+    size: 120, // Adjusted size
   },
   {
     accessorKey: "budgetable",
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="flex items-center gap-2 justify-end text-right font-semibold  uppercase tracking-wider hover:text-black">
         Disponible
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <MessageCircleQuestion size={14} />
+          </TooltipTrigger>
+          <TooltipContent>
+            Cantidad disponible para presupuestar en esta categoria.
+          </TooltipContent>
+        </Tooltip>
       </div>
     ),
     cell: (info) => (
@@ -150,7 +190,7 @@ export const inflowTableColumns: ColumnDef<CategoryRowData>[] = [
     id: "actionsInflow",
     header: () => <div className="w-8"></div>, // Empty header for spacing
     cell: () => (
-      <div className="text-center text-gray-400 hover:text-gray-600 cursor-pointer">
+      <div className="text-center  hover: cursor-pointer">
         {/* Icon placeholder e.g. ChevronRightIcon */}❯
       </div>
     ),
@@ -163,22 +203,28 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     id: "categoryName",
     accessorKey: "name",
     header: () => (
-      <div className="text-left pl-4 font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="text-left pl-4 font-semibold  uppercase tracking-wider">
         Gastos
       </div>
     ),
     cell: (info) => (
-      <div className="pl-4 font-medium text-gray-800">
-        {info.getValue<string>()}
-      </div>
+      <div className="pl-4 font-medium ">{info.getValue<string>()}</div>
     ),
     size: 280,
   },
   {
     accessorKey: "budgeted",
     header: () => (
-      <div className=" font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="font-semibold  uppercase tracking-wider flex gap-2 items-center hover:text-black">
         Presupuestado
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <MessageCircleQuestion size={14} />
+          </TooltipTrigger>
+          <TooltipContent>
+            Cantidad de gastos esperados en esta categoria.
+          </TooltipContent>
+        </Tooltip>
       </div>
     ),
     cell: (info) => <ExpectedCell info={info} />,
@@ -188,34 +234,55 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
   {
     accessorKey: "activity",
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="text-right font-semibold  uppercase tracking-wider">
         Actividad
       </div>
     ),
     cell: (info) => {
       return (
-        <div className="text-right text-gray-700">
-          {formatCurrency(info.getValue<number>())}
+        <div className="flex justify-end">
+          <div className="flex justify-between items-center gap-2">
+            {info.getValue<number>() !== 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Search size={14} />
+                </TooltipTrigger>
+                <TooltipContent>Ver transacciones</TooltipContent>
+              </Tooltip>
+            )}
+            <div className="text-right ">
+              {formatCurrency(info.getValue<number>())}
+            </div>
+          </div>
         </div>
       );
     },
-    size: 180,
+
+    size: 120,
   },
   {
     accessorKey: "budgetable", // Changed from "available"
     header: () => (
-      <div className="text-right font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="flex items-center gap-2 justify-end text-right font-semibold  uppercase tracking-wider hover:text-black">
         Disponible
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <MessageCircleQuestion size={14} />
+          </TooltipTrigger>
+          <TooltipContent>
+            Cantidad disponible para presupuestar en este periodo.
+          </TooltipContent>
+        </Tooltip>
       </div>
     ),
     cell: (info) => {
       const budgetableAmount = info.getValue<number | null>(); // Changed variable name for clarity
-      let textColor = "text-gray-700";
+      let textColor = "";
       if (budgetableAmount !== null && budgetableAmount > 0)
         textColor = "text-green-700 font-bold";
       else if (budgetableAmount !== null && budgetableAmount < 0)
         textColor = "text-red-700 font-bold";
-      else if (budgetableAmount === 0) textColor = "text-gray-500"; // For MX$0.00
+      else if (budgetableAmount === 0) textColor = ""; // For MX$0.00
 
       return (
         <div className={`text-right ${textColor}`}>
@@ -229,7 +296,7 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     id: "actionsOutflow",
     header: () => <div className="w-8"></div>, // Empty header for spacing
     cell: () => (
-      <div className="text-center text-gray-400 hover:text-gray-600 cursor-pointer">
+      <div className="text-center  hover: cursor-pointer">
         {/* Icon placeholder e.g. ChevronRightIcon */}❯
       </div>
     ),

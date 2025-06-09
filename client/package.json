@@ -45,6 +45,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
     "react-papaparse": "^4.4.0",
+    "react-scan": "^0.3.4",
     "recharts": "^2.15.3",
     "redaxios": "^0.5.1",
     "sonner": "^2.0.3",

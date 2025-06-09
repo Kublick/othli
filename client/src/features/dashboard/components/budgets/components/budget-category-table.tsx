@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -18,6 +19,7 @@ import {
 import { useEffect, useState } from "react";
 
 import type { CategoryRowData } from "./columns";
+import { formatCurrency } from "@/lib/utils";
 
 interface DataTableProps<TData extends CategoryRowData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -54,18 +56,17 @@ export function BudgetCategoryTable({
     },
   });
 
+  const totalBudgeted = data.reduce((acc, row) => acc + (row.budgeted ?? 0), 0);
+  const totalActivity = data.reduce((acc, row) => acc + (row.activity ?? 0), 0);
+  const totalBudgeteable = data.reduce(
+    (acc, row) => acc + (row.budgetable ?? 0),
+    0
+  );
+
+  console.log("🚀 ~ totalBudgeted:", totalBudgeted);
+
   return (
     <div className="py-4 lg:py-8">
-      {/* <div className="flex justify-end pb-8 items-center">
-        <InputIcon
-          type="text w-64"
-          value={filtering ?? ""}
-          onChange={(e) => setFiltering(String(e.target.value))}
-          placeholder="Buscar"
-          fullWidth={false}
-        />
-      </div> */}
-
       <div className="rounded-md border">
         <Table style={{ tableLayout: "fixed" }}>
           <TableHeader>
@@ -120,6 +121,21 @@ export function BudgetCategoryTable({
               </TableRow>
             )}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="pl-6">Totales</TableCell>
+              <TableCell className="pl-5">
+                {formatCurrency(totalBudgeted)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(totalActivity)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(totalBudgeteable)}
+              </TableCell>
+              <TableCell className="text-right"></TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
     </div>

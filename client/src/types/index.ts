@@ -25,3 +25,33 @@ export const insertAccountSchema = z.object({
 });
 
 export type InsertAccountType = z.infer<typeof insertAccountSchema>;
+
+
+export const budgetResponseSchema = z.object({
+    overallInflow: z.number(),
+    overallOutflow: z.number(),
+    netChange: z.number(),
+    categories: z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+            isIncome: z.boolean(),
+            isGroup: z.boolean(),
+            groupId: z.any(),
+            groupCategoryName: z.any(),
+            totalActivity: z.number(),
+            totalBudgeted: z.number(),
+            totalBalance: z.number(),
+            occurrences: z.array(
+                z.object({
+                    month: z.string(),
+                    activity: z.number(),
+                    budgeted: z.number(),
+                    balance: z.number(),
+                })
+            ).optional()
+        })
+    )
+})
+
+export type BudgetResponseType = z.infer<typeof budgetResponseSchema>;

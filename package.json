@@ -2,10 +2,12 @@
   "name": "backend",
   "scripts": {
     "client": "cd client && bunx --bun vite --port 3000",
+    "scandev": "cd client && bunx --bun vite --port 3000 & bunx --bun react-scan@latest",
     "server": "bun run --hot /server/src/index.ts",
     "build": "cd client && bunx --bun vite build",
     "start": "bun run /server/src/index.ts",
-    "dev": "concurrently \"bun run server\" \"bun run client\""
+    "dev": "concurrently \"bun run server\" \"bun run client\"",
+    "scan": "concurrently \"bun run server\" \"bun run scandev\""
   },
   "dependencies": {
     "@date-fns/utc": "^2.1.0",

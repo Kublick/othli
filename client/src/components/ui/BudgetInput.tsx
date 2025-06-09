@@ -58,7 +58,12 @@ function BudgetInput({
   };
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-1 hover:border-2 hover:primary",
+        className
+      )}
+    >
       <Input
         type="text"
         value={

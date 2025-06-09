@@ -32,6 +32,7 @@ import { Route as DashboardHomeOverviewImport } from './routes/dashboard/home/ov
 import { Route as DashboardHomeNetWorthImport } from './routes/dashboard/home/net-worth'
 import { Route as DashboardFinancesTransactionsImport } from './routes/dashboard/finances/transactions'
 import { Route as DashboardFinancesBudgetsImport } from './routes/dashboard/finances/budgets'
+import { Route as DashboardBudgetsYearMonthDayImport } from './routes/dashboard/budgets/$year/$month/$day'
 
 // Create/Update Routes
 
@@ -161,6 +162,13 @@ const DashboardFinancesBudgetsRoute = DashboardFinancesBudgetsImport.update({
   path: '/budgets',
   getParentRoute: () => DashboardFinancesRouteRoute,
 } as any)
+
+const DashboardBudgetsYearMonthDayRoute =
+  DashboardBudgetsYearMonthDayImport.update({
+    id: '/budgets/$year/$month/$day',
+    path: '/budgets/$year/$month/$day',
+    getParentRoute: () => DashboardRouteRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -313,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFinancesIndexImport
       parentRoute: typeof DashboardFinancesRouteImport
     }
+    '/dashboard/budgets/$year/$month/$day': {
+      id: '/dashboard/budgets/$year/$month/$day'
+      path: '/budgets/$year/$month/$day'
+      fullPath: '/dashboard/budgets/$year/$month/$day'
+      preLoaderRoute: typeof DashboardBudgetsYearMonthDayImport
+      parentRoute: typeof DashboardRouteImport
+    }
   }
 }
 
@@ -373,6 +388,7 @@ interface DashboardRouteRouteChildren {
   DashboardHomeRouteRoute: typeof DashboardHomeRouteRouteWithChildren
   DashboardSetupRouteRoute: typeof DashboardSetupRouteRouteWithChildren
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardBudgetsYearMonthDayRoute: typeof DashboardBudgetsYearMonthDayRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
@@ -380,6 +396,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardHomeRouteRoute: DashboardHomeRouteRouteWithChildren,
   DashboardSetupRouteRoute: DashboardSetupRouteRouteWithChildren,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardBudgetsYearMonthDayRoute: DashboardBudgetsYearMonthDayRoute,
 }
 
 const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
@@ -408,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/setup/merchants': typeof DashboardSetupMerchantsRoute
   '/dashboard/setup/rules': typeof DashboardSetupRulesRoute
   '/dashboard/finances/': typeof DashboardFinancesIndexRoute
+  '/dashboard/budgets/$year/$month/$day': typeof DashboardBudgetsYearMonthDayRoute
 }
 
 export interface FileRoutesByTo {
@@ -430,6 +448,7 @@ export interface FileRoutesByTo {
   '/dashboard/setup/merchants': typeof DashboardSetupMerchantsRoute
   '/dashboard/setup/rules': typeof DashboardSetupRulesRoute
   '/dashboard/finances': typeof DashboardFinancesIndexRoute
+  '/dashboard/budgets/$year/$month/$day': typeof DashboardBudgetsYearMonthDayRoute
 }
 
 export interface FileRoutesById {
@@ -455,6 +474,7 @@ export interface FileRoutesById {
   '/dashboard/setup/merchants': typeof DashboardSetupMerchantsRoute
   '/dashboard/setup/rules': typeof DashboardSetupRulesRoute
   '/dashboard/finances/': typeof DashboardFinancesIndexRoute
+  '/dashboard/budgets/$year/$month/$day': typeof DashboardBudgetsYearMonthDayRoute
 }
 
 export interface FileRouteTypes {
@@ -481,6 +501,7 @@ export interface FileRouteTypes {
     | '/dashboard/setup/merchants'
     | '/dashboard/setup/rules'
     | '/dashboard/finances/'
+    | '/dashboard/budgets/$year/$month/$day'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -502,6 +523,7 @@ export interface FileRouteTypes {
     | '/dashboard/setup/merchants'
     | '/dashboard/setup/rules'
     | '/dashboard/finances'
+    | '/dashboard/budgets/$year/$month/$day'
   id:
     | '__root__'
     | '/'
@@ -525,6 +547,7 @@ export interface FileRouteTypes {
     | '/dashboard/setup/merchants'
     | '/dashboard/setup/rules'
     | '/dashboard/finances/'
+    | '/dashboard/budgets/$year/$month/$day'
   fileRoutesById: FileRoutesById
 }
 
@@ -576,7 +599,8 @@ export const routeTree = rootRoute
         "/dashboard/finances",
         "/dashboard/home",
         "/dashboard/setup",
-        "/dashboard/"
+        "/dashboard/",
+        "/dashboard/budgets/$year/$month/$day"
       ]
     },
     "/dashboard/finances": {
@@ -665,6 +689,10 @@ export const routeTree = rootRoute
     "/dashboard/finances/": {
       "filePath": "dashboard/finances/index.tsx",
       "parent": "/dashboard/finances"
+    },
+    "/dashboard/budgets/$year/$month/$day": {
+      "filePath": "dashboard/budgets/$year/$month/$day.tsx",
+      "parent": "/dashboard"
     }
   }
 }

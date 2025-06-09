@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -49,6 +50,8 @@ export function InflowTable({
     // globalFilterFn: "includesString",
   });
 
+  console.log("Table being updated");
+
   return (
     <div>
       <div className="flex justify-end pb-8 items-center">
@@ -71,7 +74,7 @@ export function InflowTable({
                   return (
                     <TableHead
                       key={header.id}
-                      style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                      style={{ width: `${header.getSize()}px` }}
                     >
                       {header.isPlaceholder
                         ? null
@@ -111,11 +114,30 @@ export function InflowTable({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Uh ho no hay resultados aun...
+                  No hay transacciones aun...
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell>Totals</TableCell>
+            </TableRow>
+            {table.getFooterGroups().map((footerGroup) => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <th key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.footer,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </TableRow>
+            ))}
+          </TableFooter>
         </Table>
       </div>
     </div>

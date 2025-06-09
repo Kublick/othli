@@ -56,6 +56,7 @@ function transformBudgetData(
       budgeted: category.totalBudgeted,
       activity: category.totalActivity,
       budgetable: category.totalBalance,
+      ocurrences: category.occurrences,
     };
 
     if (category.isIncome) {
@@ -83,7 +84,7 @@ function BudgetsPage() {
     start_date,
     end_date,
   });
-  console.log(budgetData);
+
   const formattedDate = currentDate.toLocaleDateString("es-MX", {
     month: "long",
     year: "numeric",
@@ -95,7 +96,6 @@ function BudgetsPage() {
   const { inflowData, outflowData } = budgetData
     ? transformBudgetData(budgetData)
     : { inflowData: [], outflowData: [] };
-  console.log("🚀 ~ BudgetsPage ~ budgetData:", budgetData);
 
   const goToPreviousMonth = () => {
     setCurrentDate((prevDate) => subMonths(prevDate, 1));
