@@ -44,7 +44,7 @@ export function BudgetCategoryTable({
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getRowId: (row) => row.id, // Use the id from CategoryRowData
+    getRowId: (row) => `${row.id}-${start_date}`,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       globalFilter: filtering,

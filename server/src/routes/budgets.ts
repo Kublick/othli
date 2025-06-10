@@ -2,11 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../db/drizzle";
-import {
-  budgets,
-  categories,
-  transactions,
-} from "../db/schema";
+import { budgets, categories, transactions } from "../db/schema";
 import { auth } from "../lib/auth";
 import { DateRangeSchema } from "./transactions";
 import { and, eq, gte, lte } from "drizzle-orm";
@@ -89,7 +85,6 @@ export const budgetsRouter = new Hono<{
     const startOfCurrentMonthUTC = startOfMonth(parsedBudgetMonthDate, {
       in: utc,
     });
-    console.log("🚀 ~ .post ~ startOfCurrentMonthUTC:", startOfCurrentMonthUTC);
 
     const endOfCurrentMonthUTC = endOfMonth(parsedBudgetMonthDate, { in: utc });
     console.log("🚀 ~ .post ~ endOfCurrentMonthUTC:", endOfCurrentMonthUTC);
