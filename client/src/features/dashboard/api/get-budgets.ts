@@ -1,9 +1,5 @@
 import { client } from "@/lib/client";
-import {
-  queryOptions,
-  useQuery,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import type { InferResponseType } from "hono/client";
 
 type ResponseType = InferResponseType<

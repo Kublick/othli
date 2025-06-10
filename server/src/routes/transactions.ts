@@ -13,6 +13,7 @@ import {
 import { nanoid } from "nanoid";
 import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { inArray } from "drizzle-orm"; // Import inArray for batch fetching
+import { getTransaction } from "../../../client/src/features/dashboard/api/get-transaction";
 
 export const DateRangeSchema = z.object({
   start_date: z
@@ -49,6 +50,12 @@ export const logEntrySchema = z.object({
   ]),
   timestamp: z.date(),
 });
+
+export const getTransactionByCategory = z
+  .object({
+    id: z.string(),
+  })
+  .extend(DateRangeSchema.shape);
 
 export const insertTransactionSchema = z.object({
   date: z.coerce.date(),
@@ -113,8 +120,8 @@ export const transactionsRouter = new Hono<{
       console.log(error);
       return c.json({ message: "Invalid date range" }, 400);
     }
-  }).get("/summary", zValidator("query", DateRangeSchema), async (c) => {
-
+  })
+  .get("/summary", zValidator("query", DateRangeSchema), async (c) => {
     const { start_date, end_date } = c.req.valid("query");
 
     const user = c.get("user");
@@ -124,11 +131,14 @@ export const transactionsRouter = new Hono<{
     const endDate = new Date(end_date);
 
     try {
-
-
-      const [incomeResult] = await db.select({
-        totalIncome: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
-      }).from(transactions).innerJoin(categories, eq(transactions.categoryId, categories.id))
+      const [incomeResult] = await db
+        .select({
+          totalIncome: sum(
+            sql<number>`CAST(${transactions.amount} AS numeric)`
+          ).mapWith(Number),
+        })
+        .from(transactions)
+        .innerJoin(categories, eq(transactions.categoryId, categories.id))
         .where(
           and(
             eq(transactions.userId, user.id),
@@ -136,13 +146,15 @@ export const transactionsRouter = new Hono<{
             lte(transactions.date, endDate),
             eq(categories.isIncome, true)
           )
-        )
+        );
 
       const totalIncome = incomeResult?.totalIncome ?? 0;
 
       const [expensesResult] = await db
         .select({
-          totalExpenses: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
+          totalExpenses: sum(
+            sql<number>`CAST(${transactions.amount} AS numeric)`
+          ).mapWith(Number),
         })
         .from(transactions)
         .innerJoin(categories, eq(transactions.categoryId, categories.id))
@@ -160,7 +172,9 @@ export const transactionsRouter = new Hono<{
         .select({
           categoryId: categories.id,
           categoryName: categories.name,
-          total: sum(sql<number>`CAST(${transactions.amount} AS numeric)`).mapWith(Number),
+          total: sum(
+            sql<number>`CAST(${transactions.amount} AS numeric)`
+          ).mapWith(Number),
         })
         .from(transactions)
         .innerJoin(categories, eq(transactions.categoryId, categories.id))
@@ -175,34 +189,34 @@ export const transactionsRouter = new Hono<{
         .groupBy(categories.id, categories.name)
         .orderBy(desc(sql`sum(CAST(${transactions.amount} AS numeric))`));
 
-
-      const expensesByCategory = expensesByCategoryResult.map(item => ({
+      const expensesByCategory = expensesByCategoryResult.map((item) => ({
         ...item,
-        total: Math.abs(item.total ?? 0)
+        total: Math.abs(item.total ?? 0),
       }));
 
       const projectedExpenses = 0;
       const projectedIncome = 0;
       const netIncome = totalIncome - totalExpenses;
       const projectedNetIncome = projectedIncome - projectedExpenses;
-      const currentSavingsRate = totalIncome > 0 ? (netIncome / totalIncome) * 100 : 0;
+      const currentSavingsRate =
+        totalIncome > 0 ? (netIncome / totalIncome) * 100 : 0;
 
       // Return the actual calculated data
-      return c.json({
-        totalIncome,
-        totalExpenses,
-        netIncome,
-        projectedNetIncome,
-        currentSavingsRate,
-        expensesByCategory,
-      }, 200);
-
+      return c.json(
+        {
+          totalIncome,
+          totalExpenses,
+          netIncome,
+          projectedNetIncome,
+          currentSavingsRate,
+          expensesByCategory,
+        },
+        200
+      );
     } catch (error) {
       console.log(error);
       return c.json({ message: "Invalid date range" }, 400);
     }
-
-
   })
   .post("/", zValidator("json", insertTransactionSchema), async (c) => {
     const user = c.get("user");
@@ -396,9 +410,9 @@ export const transactionsRouter = new Hono<{
               metadata:
                 field === "amount"
                   ? {
-                    original_amount: String(oldValue),
-                    new_amount: String(updateValue),
-                  }
+                      original_amount: String(oldValue),
+                      new_amount: String(updateValue),
+                    }
                   : undefined,
             },
             timestamp: new Date(),
@@ -534,8 +548,6 @@ export const transactionsRouter = new Hono<{
           return entry;
         });
 
-        console.log(JSON.stringify(augmentedHistory));
-
         // 5. Validate and Return Augmented History
         // Adjust selectTransactionHistorySchema if needed to allow optional name fields
         // Or create a new schema for the augmented response
@@ -548,6 +560,59 @@ export const transactionsRouter = new Hono<{
           { message: "Ocurrio un error al obtener el historial" },
           500
         );
+      }
+    }
+  )
+  .post(
+    "/category",
+    zValidator("json", getTransactionByCategory),
+    async (c) => {
+      // const user = c.get("user");
+      // if (!user) return c.json({ message: "unauthorized" }, 401);
+
+      const { id, start_date, end_date } = c.req.valid("json");
+
+      const startDate = new Date(start_date);
+      const endDate = new Date(end_date);
+
+      try {
+        const rawResults = await db
+          .select({
+            transaction: {
+              id: transactions.id,
+              date: transactions.date,
+              amount: transactions.amount,
+            },
+            payee: {
+              id: payees.id,
+              name: payees.name,
+            },
+            categories: {
+              id: categories.id,
+              name: categories.name,
+            },
+          })
+          .from(transactions)
+          .leftJoin(payees, eq(transactions.payeeId, payees.id))
+          .leftJoin(categories, eq(transactions.categoryId, categories.id))
+          .where(
+            and(
+              eq(transactions.categoryId, Number(id)),
+              // eq(transactions.userId, user.id),
+              gte(transactions.date, startDate),
+              lte(transactions.date, endDate)
+            )
+          );
+
+        const categoryTransactions = rawResults.map((row) => ({
+          ...row.transaction,
+          payee: row.payee,
+          category: row.categories,
+        }));
+
+        return c.json(categoryTransactions, 200);
+      } catch (e) {
+        console.log(e);
       }
     }
   );

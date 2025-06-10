@@ -6,8 +6,9 @@ import { useLoadingStore } from "@/store/loading-store";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { InferResponseType } from "hono";
-import { ArrowLeftRight, MessageCircleQuestion, Search } from "lucide-react";
+import { ArrowLeftRight, MessageCircleQuestion } from "lucide-react";
 import { useState } from "react";
+import TransactionsDialog from "./transactions-dialog";
 // import { BudgetTooltip } from "./budgeted-tooltip";
 
 export type BudgetType = InferResponseType<
@@ -234,13 +235,15 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     ),
     cell: (info) => {
       const value = info.getValue<number>();
+      const id = info.row.id;
+
       return (
         <div className="relative flex items-center">
           {value !== 0 && (
             <div className="absolute left-0">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Search size={14} />
+                  <TransactionsDialog id={id} />
                 </TooltipTrigger>
                 <TooltipContent>Ver transacciones</TooltipContent>
               </Tooltip>
@@ -254,7 +257,6 @@ export const outflowTableColumns: ColumnDef<CategoryRowData>[] = [
     },
     size: OTHER_COLUMNS_WIDTH,
   },
-
   {
     accessorKey: "budgetable",
     header: () => (
