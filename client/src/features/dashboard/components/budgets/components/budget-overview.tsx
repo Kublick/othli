@@ -16,22 +16,17 @@ interface Props {
 }
 
 const BudgetOverview = ({ inflowData, outflowData }: Props) => {
-  const totalInflowBudgetable = inflowData.reduce(
-    (sum, row) => sum + (Number(row.budgetable) || 0),
-    0
-  );
-
-  const totalOutflowBudgeteable = outflowData.reduce(
-    (sum, row) => sum + (Number(row.budgetable) || 0),
-    0
-  );
-
-  const totalOutflowBudggeted = inflowData.reduce(
+  const totalExpected = inflowData.reduce(
     (sum, row) => sum + (Number(row.budgeted) || 0),
     0
   );
 
-  const leftToBudget = totalInflowBudgetable - totalOutflowBudgeteable;
+  const totalOutflowBudggeted = outflowData.reduce(
+    (sum, row) => sum + (Number(row.budgeted) || 0),
+    0
+  );
+
+  const leftToBudget = totalExpected - totalOutflowBudggeted;
 
   const budgetStatus = () => {
     if (leftToBudget === 0) {
@@ -82,14 +77,16 @@ const BudgetOverview = ({ inflowData, outflowData }: Props) => {
         <div className="flex flex-col space-y-2">
           <div className="flex justify-between">
             <p className="text-sm text-muted-foreground font-semibold">
-              Presupuestable
+              Disponible
             </p>
             <p className="text-sm text-muted-foreground font-mono">
               {formatCurrency(leftToBudget)}
             </p>
           </div>
           <div className="flex justify-between">
-            <p className="text-sm text-muted-foreground font-semibold">Total</p>
+            <p className="text-sm text-muted-foreground font-semibold">
+              Total Presupuesto
+            </p>
             <p className="text-sm text-muted-foreground font-mono">
               {formatCurrency(totalOutflowBudggeted)}
             </p>
@@ -97,7 +94,7 @@ const BudgetOverview = ({ inflowData, outflowData }: Props) => {
           <Separator />
           <div className="flex justify-between">
             <p className="text-sm text-muted-foreground font-semibold">
-              A Presupuestar
+              Restante
             </p>
             <p className="text-sm text-muted-foreground font-mono">
               {formatCurrency(leftToBudget)}

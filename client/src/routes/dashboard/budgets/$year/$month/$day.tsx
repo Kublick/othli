@@ -105,6 +105,20 @@ function BudgetContent({
     [data]
   );
 
+  const totalExpected = inflowData.reduce(
+    (sum, row) => sum + (Number(row.budgeted) || 0),
+    0
+  );
+  console.log("🚀 ~ totalExpected:", totalExpected);
+
+  const totalOutflowBudggeted = outflowData.reduce(
+    (sum, row) => sum + (Number(row.budgeted) || 0),
+    0
+  );
+
+  const leftToBudget = totalExpected - totalOutflowBudggeted;
+  console.log("🚀 ~ leftToBudget:", leftToBudget);
+
   return (
     <div className="grid lg:grid-cols-5 gap-4">
       <div className="col-span-4 space-y-8">
