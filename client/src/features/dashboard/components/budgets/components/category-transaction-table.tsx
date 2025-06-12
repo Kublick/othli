@@ -25,6 +25,7 @@ interface DataTableProps<TData extends CategoryTransactionType, TValue> {
   tableTitle?: string;
 }
 
+// TODO add foter with totals
 export function CategoryTransactionTable({
   columns,
   data,
