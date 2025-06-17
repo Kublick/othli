@@ -21,8 +21,6 @@ const AccountOverview = () => {
     });
   };
 
-  console.log("🚀 ~ AccountOverview ~ data:", data);
-
   if (isLoading)
     return (
       <div className="grid gap-4">

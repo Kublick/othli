@@ -45,6 +45,7 @@ export function ChartComponent({ firstDayOfMonth, lastDayOfMonth }: Props) {
     start_date: firstDayOfMonth.toISOString().substring(0, 10),
     end_date: lastDayOfMonth.toISOString().substring(0, 10),
   });
+  console.log("🚀 ~ ChartComponent ~ data:", data);
 
   if (!data) {
     return <div>No existen registros</div>;

@@ -102,7 +102,7 @@ export const useAuthStore = create<
           set({ isLoading: true, error: null }, undefined, "loginWithGoogle");
           try {
             const url = `${import.meta.env.VITE_PUBLIC_URL}/dashboard`;
-            console.log(url);
+
             await signIn.social(
               {
                 provider: "google",
@@ -159,6 +159,7 @@ export const useAuthStore = create<
           set({ isLoading: true, error: null }, undefined, "logout");
           try {
             await signOut();
+
             set(
               { user: null, isAuthenticated: false, isLoading: false },
               undefined,

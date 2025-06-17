@@ -14,6 +14,8 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as DashboardRouteImport } from './routes/dashboard/route'
 import { Route as IndexImport } from './routes/index'
 import { Route as DashboardIndexImport } from './routes/dashboard/index'
+import { Route as ProfileSubscriptionImport } from './routes/profile/subscription'
+import { Route as ProfileAccountImport } from './routes/profile/account'
 import { Route as AuthVerifyImport } from './routes/auth/verify'
 import { Route as AuthSignupImport } from './routes/auth/signup'
 import { Route as AuthResetImport } from './routes/auth/reset'
@@ -52,6 +54,18 @@ const DashboardIndexRoute = DashboardIndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRouteRoute,
+} as any)
+
+const ProfileSubscriptionRoute = ProfileSubscriptionImport.update({
+  id: '/profile/subscription',
+  path: '/profile/subscription',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ProfileAccountRoute = ProfileAccountImport.update({
+  id: '/profile/account',
+  path: '/profile/account',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const AuthVerifyRoute = AuthVerifyImport.update({
@@ -244,6 +258,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyImport
       parentRoute: typeof rootRoute
     }
+    '/profile/account': {
+      id: '/profile/account'
+      path: '/profile/account'
+      fullPath: '/profile/account'
+      preLoaderRoute: typeof ProfileAccountImport
+      parentRoute: typeof rootRoute
+    }
+    '/profile/subscription': {
+      id: '/profile/subscription'
+      path: '/profile/subscription'
+      fullPath: '/profile/subscription'
+      preLoaderRoute: typeof ProfileSubscriptionImport
+      parentRoute: typeof rootRoute
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -414,6 +442,8 @@ export interface FileRoutesByFullPath {
   '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/profile/account': typeof ProfileAccountRoute
+  '/profile/subscription': typeof ProfileSubscriptionRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/finances/budgets': typeof DashboardFinancesBudgetsRoute
   '/dashboard/finances/transactions': typeof DashboardFinancesTransactionsRoute
@@ -437,6 +467,8 @@ export interface FileRoutesByTo {
   '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/profile/account': typeof ProfileAccountRoute
+  '/profile/subscription': typeof ProfileSubscriptionRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/finances/budgets': typeof DashboardFinancesBudgetsRoute
   '/dashboard/finances/transactions': typeof DashboardFinancesTransactionsRoute
@@ -463,6 +495,8 @@ export interface FileRoutesById {
   '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/profile/account': typeof ProfileAccountRoute
+  '/profile/subscription': typeof ProfileSubscriptionRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/finances/budgets': typeof DashboardFinancesBudgetsRoute
   '/dashboard/finances/transactions': typeof DashboardFinancesTransactionsRoute
@@ -490,6 +524,8 @@ export interface FileRouteTypes {
     | '/auth/reset'
     | '/auth/signup'
     | '/auth/verify'
+    | '/profile/account'
+    | '/profile/subscription'
     | '/dashboard/'
     | '/dashboard/finances/budgets'
     | '/dashboard/finances/transactions'
@@ -512,6 +548,8 @@ export interface FileRouteTypes {
     | '/auth/reset'
     | '/auth/signup'
     | '/auth/verify'
+    | '/profile/account'
+    | '/profile/subscription'
     | '/dashboard'
     | '/dashboard/finances/budgets'
     | '/dashboard/finances/transactions'
@@ -536,6 +574,8 @@ export interface FileRouteTypes {
     | '/auth/reset'
     | '/auth/signup'
     | '/auth/verify'
+    | '/profile/account'
+    | '/profile/subscription'
     | '/dashboard/'
     | '/dashboard/finances/budgets'
     | '/dashboard/finances/transactions'
@@ -559,6 +599,8 @@ export interface RootRouteChildren {
   AuthResetRoute: typeof AuthResetRoute
   AuthSignupRoute: typeof AuthSignupRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  ProfileAccountRoute: typeof ProfileAccountRoute
+  ProfileSubscriptionRoute: typeof ProfileSubscriptionRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -569,6 +611,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetRoute: AuthResetRoute,
   AuthSignupRoute: AuthSignupRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  ProfileAccountRoute: ProfileAccountRoute,
+  ProfileSubscriptionRoute: ProfileSubscriptionRoute,
 }
 
 export const routeTree = rootRoute
@@ -587,7 +631,9 @@ export const routeTree = rootRoute
         "/auth/login",
         "/auth/reset",
         "/auth/signup",
-        "/auth/verify"
+        "/auth/verify",
+        "/profile/account",
+        "/profile/subscription"
       ]
     },
     "/": {
@@ -645,6 +691,12 @@ export const routeTree = rootRoute
     },
     "/auth/verify": {
       "filePath": "auth/verify.tsx"
+    },
+    "/profile/account": {
+      "filePath": "profile/account.tsx"
+    },
+    "/profile/subscription": {
+      "filePath": "profile/subscription.tsx"
     },
     "/dashboard/": {
       "filePath": "dashboard/index.tsx",

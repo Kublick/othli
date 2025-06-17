@@ -1,8 +1,11 @@
+import { useMemo } from "react";
+import { NewProgress } from "@/components/ui/new-progress";
 import { getOverViewSummary } from "../../api/getOverviewSummary";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type { client } from "@/lib/client";
 import type { InferResponseType } from "hono";
+import { formatCurrency } from "@/lib/utils";
 
 interface Props {
   firstDayOfMonth: Date;
@@ -14,85 +17,144 @@ type ResponseType = InferResponseType<
   200
 >;
 
+type Segment = {
+  value: number;
+  color: string;
+  categoryName: string;
+  total: number;
+};
+
 // Define a list of colors to cycle through
-const categoryColors = [
-  "#FF6384", // Red
-  "#36A2EB", // Blue
-  "#FFCE56", // Yellow
-  "#4BC0C0", // Teal
-  "#9966FF", // Purple
-  "#FF9F40", // Orange
-  "#80CBC4", // Light Teal
-  "#F48FB1", // Pink
-];
+const CATEGORY_COLORS = [
+  "bg-teal-600",
+  "bg-fuchsia-400",
+  "bg-emerald-400",
+  "bg-yellow-300",
+  "bg-rose-400",
+  "bg-blue-500",
+  "bg-lime-400",
+  "bg-red-400",
+  "bg-teal-400",
+  "bg-pink-400",
+  "bg-cyan-600",
+  "bg-pink-500",
+  "bg-blue-600",
+  "bg-orange-400",
+] as const;
 
 const SpendingBreakdown = ({ firstDayOfMonth, lastDayOfMonth }: Props) => {
-  const { data: overviewData } = getOverViewSummary({
-    start_date: firstDayOfMonth.toISOString().substring(0, 10),
-    end_date: lastDayOfMonth.toISOString().substring(0, 10),
-  });
+  const dateRange = useMemo(
+    () => ({
+      start_date: firstDayOfMonth.toISOString().substring(0, 10),
+      end_date: lastDayOfMonth.toISOString().substring(0, 10),
+    }),
+    [firstDayOfMonth, lastDayOfMonth]
+  );
 
+  const { data: overviewData } = getOverViewSummary(dateRange);
   const data = overviewData as ResponseType;
 
-  // Handle cases where data might not be loaded yet
-  if (!data) {
-    // Optionally return a loading state or null
-    return <div>Loading spending breakdown...</div>; // Or <Skeleton /> components
-  }
+  const processedData = useMemo(() => {
+    if (!data) return null;
 
-  return (
-    <div>
+    const createSegments = (
+      categories: Array<{ categoryName: string; total: number }>,
+      totalAmount: number
+    ): Segment[] => {
+      return categories
+        .map((category) => ({
+          value: totalAmount > 0 ? (category.total / totalAmount) * 100 : 0,
+          color: "", // Will be assigned later
+          categoryName: category.categoryName,
+          total: category.total,
+        }))
+        .sort((a, b) => b.value - a.value);
+    };
+
+    const incomeSegments = createSegments(
+      data.incomeByCategory,
+      data.totalIncome
+    );
+    const expenseSegments = createSegments(
+      data.expensesByCategory,
+      data.totalExpenses
+    );
+
+    // Assign colors globally to avoid immediate repetition
+    let colorIndex = 0;
+    const assignColorsGlobally = (segments: Segment[]): Segment[] => {
+      return segments.map((segment) => ({
+        ...segment,
+        color: CATEGORY_COLORS[colorIndex++ % CATEGORY_COLORS.length],
+      }));
+    };
+
+    console.log(assignColorsGlobally(expenseSegments));
+
+    return {
+      income: assignColorsGlobally(incomeSegments),
+      expenses: assignColorsGlobally(expenseSegments),
+      totalExpenses: data.totalExpenses,
+    };
+  }, [data]);
+
+  // Early return for loading state
+  if (!data || !processedData) {
+    return (
       <Card>
-        <CardHeader>Gastos</CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-6 mb-4">
-            {" "}
-            {/* Added margin bottom */}
-            {/* Income Progress Bar */}
-            <ProgressBar
-              label="Ingreso"
-              value={data?.totalIncome}
-              max={data?.totalIncome > 0 ? data.totalIncome : 1} // Avoid max=0
-              color="#26B99A" // Keep income color consistent
-              currencyCode="MX$"
-              height={16}
-            />
-            {/* Total Expenses Progress Bar */}
-            <ProgressBar
-              label="Gastos Totales" // More descriptive label
-              value={data?.totalExpenses}
-              max={data?.totalExpenses}
-              height={16}
-              currencyCode="MX$"
-              showMax={false} // Keep showMax as false if desired
-              color="var(--destructive)" // Keep total expenses color consistent
-            />
-          </div>
-
-          {/* Expenses by Category */}
-          {data.expensesByCategory?.map(
-            (
-              expense,
-              index // Added index
-            ) => (
-              <div key={expense.categoryId} className="py-2">
-                {" "}
-                {/* Added key */}
-                <ProgressBar
-                  label={expense.categoryName}
-                  value={expense.total}
-                  max={data?.totalExpenses > 0 ? data.totalExpenses : 1}
-                  height={10}
-                  currencyCode="MX$"
-                  showMax={false}
-                  color={categoryColors[index % categoryColors.length]}
-                />
-              </div>
-            )
-          )}
+          <div className="animate-pulse">Cargando Datos...</div>
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  console.log(processedData);
+
+  return (
+    <Card>
+      <CardHeader>Resumen</CardHeader>
+      <CardContent className="space-y-6">
+        {/* Income Section */}
+        <div>
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold mb-3 ">Ingresos</h2>
+            <p className="font-semibold font-mono">
+              {formatCurrency(data.totalIncome)}
+            </p>
+          </div>
+          <NewProgress segments={processedData.income} />
+        </div>
+
+        {/* Expenses Section */}
+        <div>
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold mb-3 ">Gastos</h2>
+            <p className="font-semibold font-mono">
+              {formatCurrency(data.totalExpenses)}
+            </p>
+          </div>
+
+          <NewProgress segments={processedData.expenses} />
+        </div>
+
+        {/* Detailed Expenses Breakdown */}
+        <div className="space-y-2">
+          {processedData.expenses.map((expense) => (
+            <ProgressBar
+              key={expense.categoryName}
+              label={expense.categoryName}
+              value={expense.total}
+              max={Math.max(processedData.totalExpenses, 1)}
+              height={10}
+              currencyCode="MX$"
+              showMax={false}
+              color={expense.color}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

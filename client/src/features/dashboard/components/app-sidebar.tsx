@@ -3,6 +3,7 @@ import { GalleryVerticalEnd, Minus, Plus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -19,7 +20,23 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-import { Link } from "@tanstack/react-router";
+import { Link, linkOptions } from "@tanstack/react-router";
+import NavUser from "@/components/nav-user";
+
+const options = [
+  linkOptions({
+    to: "/dashboard/home/overview",
+    label: "Principal",
+  }),
+  linkOptions({
+    to: "/dashboard/finances/budgets",
+    label: "Finanzas",
+  }),
+  linkOptions({
+    to: "/dashboard/setup/accounts",
+    label: "Ajustes",
+  }),
+];
 
 const data = {
   navMain: [
@@ -131,6 +148,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

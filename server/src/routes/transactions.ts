@@ -194,12 +194,41 @@ export const transactionsRouter = new Hono<{
         total: Math.abs(item.total ?? 0),
       }));
 
+      // Add incomeByCategory
+      const incomeByCategoryResult = await db
+        .select({
+          categoryId: categories.id,
+          categoryName: categories.name,
+          total: sum(
+            sql<number>`CAST(${transactions.amount} AS numeric)`
+          ).mapWith(Number),
+        })
+        .from(transactions)
+        .innerJoin(categories, eq(transactions.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactions.userId, user.id),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate),
+            eq(categories.isIncome, true)
+          )
+        )
+        .groupBy(categories.id, categories.name)
+        .orderBy(desc(sql`sum(CAST(${transactions.amount} AS numeric))`));
+
+      const incomeByCategory = incomeByCategoryResult.map((item) => ({
+        ...item,
+        total: Math.abs(item.total ?? 0),
+      }));
+
       const projectedExpenses = 0;
       const projectedIncome = 0;
       const netIncome = totalIncome - totalExpenses;
       const projectedNetIncome = projectedIncome - projectedExpenses;
       const currentSavingsRate =
         totalIncome > 0 ? (netIncome / totalIncome) * 100 : 0;
+
+      console.log({ expensesByCategory });
 
       // Return the actual calculated data
       return c.json(
@@ -210,6 +239,7 @@ export const transactionsRouter = new Hono<{
           projectedNetIncome,
           currentSavingsRate,
           expensesByCategory,
+          incomeByCategory,
         },
         200
       );

@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 // import ThemeToggle from "@/components/ui/theme-toggle";
 import { AppSidebar } from "@/features/dashboard/components/app-sidebar";
 import { authClient } from "@/lib/auth-client";
-import { useAuthStore } from "@/store/store";
+
 import {
   createFileRoute,
   linkOptions,
@@ -45,8 +45,6 @@ const options = [
 ];
 
 function RouteComponent() {
-  const { user, logout } = useAuthStore();
-
   return (
     <div>
       <SidebarProvider>
